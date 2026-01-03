@@ -17,7 +17,7 @@ class ELegislationConfig(BaseModel):
     headless: bool = True
 
     # Scraping parameters
-    include_subsidiary: bool = True  # Include subsidiary legislation
+    include_subsidiary: bool = False  # Include subsidiary legislation (disabled by default - most don't exist)
     include_historical: bool = False  # Include historical versions
     languages: list[str] = ["en", "zh"]  # Languages to scrape
 
