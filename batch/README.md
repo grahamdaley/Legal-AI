@@ -308,7 +308,7 @@ After=network.target
 Type=simple
 User=scraper
 WorkingDirectory=/opt/legal-ai/batch
-ExecStart=/opt/legal-ai/batch/.venv/bin/python -m jobs.run_judiciary --resume
+ExecStart=/opt/legal-ai/batch/.venv/bin/python -m jobs.run_judiciary --year-from 1947 --resume
 Restart=on-failure
 RestartSec=60
 StandardOutput=append:/var/log/legal-ai/judiciary.log
@@ -365,26 +365,7 @@ sudo systemctl stop legal-ai-judiciary
 sudo systemctl restart legal-ai-judiciary
 ```
 
-### Example systemd Service File
-
-```ini
-[Unit]
-Description=Legal AI Judiciary Scraper
-After=network.target
-
-[Service]
-Type=simple
-User=scraper
-WorkingDirectory=/opt/legal-ai/batch
-ExecStart=/opt/legal-ai/batch/.venv/bin/python -m jobs.run_judiciary --resume
-Restart=on-failure
-RestartSec=60
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Example cron for daily updates:
+### Example Cron for Daily Updates
 
 ```cron
 # Run incremental scrape daily at 2 AM

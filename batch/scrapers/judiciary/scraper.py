@@ -421,9 +421,9 @@ class JudiciaryScraper(BaseScraper):
             # Try to find PDF link
             case.pdf_url = self._extract_pdf_url(html, url)
 
-            # Validate we got meaningful data
-            if not case.neutral_citation and not case.case_name:
-                self._log.warning("No citation or case name found", url=url)
+            # Validate we got meaningful data (case_number is most reliable)
+            if not case.case_number and not case.neutral_citation:
+                self._log.warning("No case number or citation found", url=url)
                 case.error = "Could not extract case identifier"
 
             return case
