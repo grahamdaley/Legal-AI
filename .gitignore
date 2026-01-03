@@ -13,3 +13,8 @@ test-results/
 
 __pycache__/
 *.pyc
+
+# Batch scraper state and output
+batch/state/
+batch/output/
+batch/logs/
