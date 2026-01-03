@@ -1,0 +1,13 @@
+node_modules
+infra/node_modules
+bedrock/node_modules
+.git
+.gitignore
+.pulumi
+Dockerfile
+dist
+tmp
+.env
+.vscode
+.idea
+.DS_Store

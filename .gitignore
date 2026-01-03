@@ -1,0 +1,15 @@
+bin/
+dist/
+node_modules/
+playwright-report/
+supabase/.*/
+test-results/
+
+.DS_Store
+
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.pyc
