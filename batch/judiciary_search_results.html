@@ -1,0 +1,2107 @@
+<!DOCTYPE html><html lang="en" style="font-size:1rem"><head>
+<title>Legal Reference System</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--  <meta charset="utf-8"> -->
+ <meta http-equiv="X-UA-Compatible" content="IE=edge">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- <LINK href="/lrs/stylesheet/style.css" id="style_css" type="text/css" rel=stylesheet> -->
+<script src="/lrs/javascript/mod_common.js"></script>
+<script src="/lrs/javascript/mod_form.js"></script>
+<!--<script language="Javascript" src="/lrs/javascript/processbar.js" type="text/javascript"></script>-->
+<script type="text/javascript">
+function text_underline(con){
+    var a = document.getElementById(con);
+    a.style.textDecoration  = 'underline';
+    
+  }
+
+function remove_underline(con){
+    var a = document.getElementById(con);
+    a.style.textDecoration  = 'none';
+}
+
+function get_cookie ( cookie_name )
+{
+	var str = '(^|;)?' + cookie_name + '=([^;]*)(;|$)';
+	var regexp = new RegExp(str, 'g');
+	var matches = document.cookie.match(regexp);
+	
+	if (matches)
+	{
+		var results = matches[matches.length-1].match(str);
+		if ( results )
+		return ( unescape ( results[2] ) );
+	}
+	
+	return null;
+}
+function set_cookie ( name, value, exp_y, exp_m, exp_d, path, domain, secure )
+{
+	var cookie_string = name + "=" + escape ( value );
+	if ( exp_y )
+	{
+	var expires = new Date ( exp_y, exp_m, exp_d );
+	cookie_string += "; expires=" + expires.toGMTString();
+	}
+	if ( path )
+	cookie_string += "; path=" + escape ( path );
+	if ( domain )
+	cookie_string += "; domain=" + escape ( domain );
+	if ( secure )
+	cookie_string += "; secure";
+	document.cookie = cookie_string;
+}   
+if (window.name == '') window.name = 'isdWin';
+var cdomain = (location.hostname) ? location.hostname : null;
+if (cdomain)
+{
+	if (cdomain.search(/([0-9]{1,3}\.){3}[0-9]{1,3}/) == -1)
+	{
+		// remove subdomain
+		var tmp = cdomain.split(".");
+		tmp.shift();
+		cdomain = tmp.join(".");
+	}
+	// else
+	// {
+		// console.log("ip");
+	// }
+	// console.log(cdomain);
+}
+	 
+function changeFontSize(fs)
+{
+
+	set_cookie('fontsize',fs,2110,12,12,"/",cdomain);
+	var css=document.getElementById("style_css");
+	
+	if(fs=="0")
+	{
+	fs="/lrs/stylesheet/style_s.css";
+	}
+	if(fs=="1")
+	{
+	fs="/lrs/stylesheet/style.css";
+	}
+	if(fs=="2")
+	{
+	fs="/lrs/stylesheet/style_l.css";
+	}
+	css.setAttribute("href",fs);
+	
+	
+}
+function SizeOnLoad()
+{
+
+var fs = get_cookie('fontsize');
+if(fs == null)
+	fs = "0";
+if(fs=="0")
+{
+document.getElementById('fontSizeM').className='c1';document.getElementById('fontSizeL').className ='c2';document.getElementById('fontSizeXL').className ='c2';
+}
+if(fs=="1")
+{
+document.getElementById('fontSizeL').className='c1';document.getElementById('fontSizeM').className ='c2';document.getElementById('fontSizeXL').className ='c2';
+}
+if(fs=="2")
+{
+document.getElementById('fontSizeXL').className ='c1';document.getElementById('fontSizeM').className ='c2';document.getElementById('fontSizeL').className ='c2';
+}
+changeFontSize(fs);
+}
+
+</script>
+<script language="JavaScript" type="text/JavaScript">
+<!--
+SetCookie ('curl', window.location.href);
+SetCookie ('ispopup', '0');
+function FORM_SUBMIT(frm) {  
+   //var frm=document.frm_search;      
+   //if (isEmpty(frm.txtSearch, 'TEXT')){   
+   if (frm.isadvsearch.value=="0"){
+	    /*if (frm.txtSearch.value==""){
+	      onErrorAlert(frm.txtSearch, 'Please enter key word.');
+	      return false;
+	   }*/
+   }else{
+      /* if ((frm.txtSearch.value=="")&&(frm.txtSearch1.value=="")&&(frm.txtSearch2.value=="")&&(frm.txtSearch3.value=="")){
+             onErrorAlert(frm.txtSearch, 'Please enter key word.');
+	     return false;
+       }*/
+   }
+   
+   if (frm.txtselectopt.value=="5"){
+   	if (lrs_isValidDate(frm.txtSearch.value, "/",2)){
+   	
+   	}else{
+   	onErrorAlert(frm.txtSearch, 'Invalid date format. Please enter again. ');
+   	return false;
+   	}
+   }
+   //202003 CR 0420 
+   if (frm.txtselectopt3.value=="5"){
+	   if (validatedate(frm.txtSearch3.value)){	   	
+	   	}else{
+	   	onErrorAlert(frm.txtSearch3, 'Invalid date format. Please enter again. ');	
+	   	return false;
+	   }
+   }
+ //20211201 CR
+   if (frm.txtselectopt9.value=="4"){			
+		var inputValue = frm.txtSearch9.value.replace(/^\s+|\s+$/g,"");
+		if (!isEmpty(frm.txtSearch9, 'TEXT') && !isValidCaseNo2(inputValue)) {
+			onErrorAlert(frm.txtSearch, 'Invalid case number, Please enter again');
+	         return false;  	
+		}
+  }
+   //S20180111
+   if (frm.txtselectopt.value=="10"){
+      var inputValue = frm.txtSearch.value.replace(/^\s+|\s+$/g,"");
+      if (!isEmpty(frm.txtSearch, 'TEXT') && !isValidCitationNo(inputValue)) {
+         onErrorAlert(frm.txtSearch, 'Invalid Neutral Citation Number, Please enter again');
+         return false;
+      }
+   } else if (frm.isadvsearch.value == '1' && frm.txtselectopt1.value=="10"){
+      var inputValue = frm.txtSearch1.value.replace(/^\s+|\s+$/g,"");
+      if (!isEmpty(frm.txtSearch1, 'TEXT') && !isValidCitationNo(inputValue)) {
+         onErrorAlert(frm.txtSearch1, 'Invalid Neutral Citation Number, Please enter again');
+         return false;
+      }
+   } else if (frm.isadvsearch.value == '1' && frm.txtselectopt2.value=="10"){
+      var inputValue = frm.txtSearch2.value.replace(/^\s+|\s+$/g,"");
+      if (!isEmpty(frm.txtSearch2, 'TEXT') && !isValidCitationNo(inputValue)) {
+         onErrorAlert(frm.txtSearch2, 'Invalid Neutral Citation Number, Please enter again');
+         return false;
+      }
+   } else if (frm.isadvsearch.value == '1' && frm.txtselectopt3.value=="10"){
+      var inputValue = frm.txtSearch3.value.replace(/^\s+|\s+$/g,"");
+      if (!isEmpty(frm.txtSearch3, 'TEXT') && !isValidCitationNo(inputValue)) {
+         onErrorAlert(frm.txtSearch3, 'Invalid Neutral Citation Number, Please enter again');
+         return false;
+      }
+	//202003 CR S
+   } else if (frm.isadvsearch.value == '1' && frm.txtselectopt4.value=="10"){
+	      var inputValue = frm.txtSearch4.value.replace(/^\s+|\s+$/g,"");
+	      if (!isEmpty(frm.txtSearch4, 'TEXT') && !isValidCitationNo(inputValue)) {
+	         onErrorAlert(frm.txtSearch4, 'Invalid Neutral Citation Number, Please enter again');
+	         return false;
+	      }
+	   } else if (frm.isadvsearch.value == '1' && frm.txtselectopt5.value=="10"){
+	      var inputValue = frm.txtSearch5.value.replace(/^\s+|\s+$/g,"");
+	      if (!isEmpty(frm.txtSearch5, 'TEXT') && !isValidCitationNo(inputValue)) {
+	         onErrorAlert(frm.txtSearch5, 'Invalid Neutral Citation Number, Please enter again');
+	         return false;
+	      }
+	   } else if (frm.isadvsearch.value == '1' && frm.txtselectopt6.value=="10"){
+	      var inputValue = frm.txtSearch6.value.replace(/^\s+|\s+$/g,"");
+	      if (!isEmpty(frm.txtSearch6, 'TEXT') && !isValidCitationNo(inputValue)) {
+	         onErrorAlert(frm.txtSearch6, 'Invalid Neutral Citation Number, Please enter again');
+	         return false;
+	      }
+		  
+		} else if (frm.isadvsearch.value == '1' && frm.txtselectopt7.value=="10"){
+	      var inputValue = frm.txtSearch7.value.replace(/^\s+|\s+$/g,"");
+	      if (!isEmpty(frm.txtSearch7, 'TEXT') && !isValidCitationNo(inputValue)) {
+	         onErrorAlert(frm.txtSearch7, 'Invalid Neutral Citation Number, Please enter again');
+	         return false;
+	      }
+		} else if (frm.isadvsearch.value == '1' && frm.txtselectopt8.value=="10"){
+	      var inputValue = frm.txtSearch8.value.replace(/^\s+|\s+$/g,"");
+	      if (!isEmpty(frm.txtSearch8, 'TEXT') && !isValidCitationNo(inputValue)) {
+	         onErrorAlert(frm.txtSearch8, 'Invalid Neutral Citation Number, Please enter again');
+	         return false;
+	      }
+		} else if (frm.isadvsearch.value == '1' && frm.txtselectopt9.value=="10"){
+	      var inputValue = frm.txtSearch9.value.replace(/^\s+|\s+$/g,"");
+	      if (!isEmpty(frm.txtSearch9, 'TEXT') && !isValidCitationNo(inputValue)) {
+	         onErrorAlert(frm.txtSearch9, 'Invalid Neutral Citation Number, Please enter again');
+	         return false;
+	      }
+		} else if (frm.isadvsearch.value == '1' && frm.txtselectopt10.value=="10"){
+		      var inputValue = frm.txtSearch10.value.replace(/^\s+|\s+$/g,"");
+		      if (!isEmpty(frm.txtSearch10, 'TEXT') && !isValidCitationNo(inputValue)) {
+		         onErrorAlert(frm.txtSearch10, 'Invalid Neutral Citation Number, Please enter again');
+		         return false;
+		      }
+	   }
+	//202003 CR E      
+	//202207 CR S********* 2022 isValidRptNo
+   if (frm.txtselectopt10.value=="12"){
+	   	var inputValue = frm.txtSearch10.value.replace(/^\s+|\s+$/g,"");
+	      //alert(">> "+inputValue);
+	      if (!isEmpty(frm.txtSearch10, 'TEXT') && !isValidRptNo(inputValue)) {
+	         onErrorAlert(frm.txtSearch10, 'Invalid Reportage, Please enter again');
+	         return false;
+	      }
+	}
+//202207 CR E*********
+   //}       
+   //E20180111 
+   
+   return true;
+  
+}
+function havevalue(selectBox, nameToSelect){
+    var i=false;
+    for (var count = 0; count < selectBox.options.length; count++) {          
+        if(selectBox[count].selected==true){
+          if(selectBox[count].value == nameToSelect) {
+            i = true;
+          }
+        }
+        
+    }
+    return i;
+}
+
+
+function selectDBOption(selectBox, nameToSelect){ 
+    for (var count = 0; count < selectBox.options.length; count++) {          
+        if(selectBox[count].value == nameToSelect) {
+            selectBox[count].selected = true;
+        }
+    }
+
+}
+function showexamples(opt){
+  var example=document.getElementById("example");
+  var casenumber=document.getElementById("casenumber");
+  var egNCN = document.getElementById("egNCN"); //E20180111
+ 
+  if (opt==5){
+    example.style.display="inline";
+  } else{
+    example.style.display="none";
+  }
+  if (opt==4){
+    casenumber.style.display="inline";
+  }else{      
+    casenumber.style.display="none";
+  }
+  //S20180111
+  if (opt==10) {
+    egNCN.style.display="inline";
+  } else {
+    egNCN.style.display="none";
+  }
+  //E20180111
+   
+  if ((opt==4)||(opt==5)||(opt==6)||(opt==7)||(opt==8)||(opt==10)){
+    if (! ( havevalue(document.frm_search.selDatabase2,'JU') | havevalue(document.frm_search.selDatabase2,'RS') | havevalue(document.frm_search.selDatabase2,'RV'))) {           
+      selectDBOption(document.frm_search.selDatabase2,'JU');
+      selectDBOption(document.frm_search.selDatabase2,'RS');  
+      selectDBOption(document.frm_search.selDatabase2,'RV');  
+    }
+    getAppealfrm_db(document.frm_search);
+  }else if (opt==9){        
+    if (! ( havevalue(document.frm_search.selDatabase2,'RS') | havevalue(document.frm_search.selDatabase2,'RV'))) {           
+      selectDBOption(document.frm_search.selDatabase2,'RS');             
+      selectDBOption(document.frm_search.selDatabase2,'RV');             
+    }
+    getAppealfrm_db(document.frm_search);
+  }
+}
+function databaseselectall(frm,va){
+	with (frm){
+	    if (va.checked){
+	       for (var i=0;i< selDatabase2.length;i++){	     
+	        selDatabase2.options[i].selected=true	     
+	       }
+	    }else{
+	       for (var i=0;i< selDatabase2.length;i++){	     
+	        selDatabase2.options[i].selected=false;	     
+	       }
+	        selDatabase2.options[0].selected=true;
+	    }
+	}
+
+}
+//S202210 CR COURT LEVEL
+function databaseselectallct(frm,va){
+	with (frm){
+	    if (va.checked){
+	       for (var i=0;i< selSchct.length;i++){	     
+	    	   selSchct.options[i].selected=true	    
+	    	   //alert("A");
+	       }
+	    }else{
+	       for (var i=0;i< selSchct.length;i++){	     
+	       selSchct.options[i].selected=false;	     
+	       }
+	       selSchct.options[0].selected=true;
+	       
+	    }
+	}
+}
+
+function matchpop(url){
+	   if (url.indexOf("?")>0){
+	    url=url+"&currpage=T";
+	    }else{
+	    url=url+"?currpage=T";
+	    }
+	    jwindow= Addpop(url,'matchpage','1');
+	    jwindow.status="Start";
+	    // jwindow = window.open(url);
+	  //S20170901
+	  //if (navigator.userAgent.indexOf("Chrome") != -1) {
+	    jwindow.moveTo(window.screen.width *0.05, window.screen.height *0.05);
+	    jwindow.resizeTo(window.screen.width *0.9, window.screen.height *0.9);
+	  //}
+	  //E20170901
+	}
+function judpop(url){
+//alert(escape(url));
+   if (url.indexOf("?")>0){
+    url=url+"&currpage=T";
+    }else{
+    url=url+"?currpage=T";
+    }
+    //alert(url);
+    jwindow= Addpop(url,'_blank','1');
+    jwindow.status="Start";
+    // jwindow = window.open(url);
+  //S20170901
+  //if (navigator.userAgent.indexOf("Chrome") != -1) {
+    jwindow.moveTo(window.screen.width *0.05, window.screen.height *0.05);
+    jwindow.resizeTo(window.screen.width *0.9, window.screen.height *0.9);
+  //}
+  //E20170901
+}
+function judpop1(url){
+//alert(url);
+   var tmp=window.location.href;
+    //window.location.href=url+'&curl='+escape(tmp);
+    window.top.location.href=url;
+}
+function nopop(url){
+    if (url.indexOf("?")>0){
+    url=url+"&currpage=T";
+    }else{
+    url=url+"?currpage=T";
+    }
+    window.location.href=url;
+}
+function commonpop(url,wn,a,b,c,d,e,f,g,h,i){
+    var jwindow=wn;
+    jwindow= Addpop(url,wn,a,b,c,d,e,f,g,h,i);        
+}
+//202003 CR 0416_1025
+function commonpopadv() {
+  advWin = window.open("https://legalref.judiciary.hk/lrs/common/search/search_result.jsp?isadvsearch=1&stem=1&selall=1&selallct=1", "advanced search","location=1,menubar=1,resizable=1,width=750, height=380");
+  advWin.resizeTo(window.screen.width *1, window.screen.height *.99);
+  advWin.focus();
+}
+function getOpts(oSelect) {
+	var opt, i = 0, selVals = new Array();
+	while (opt = oSelect[i++]) if (opt.selected) selVals[selVals.length] = opt.value;
+	return selVals;
+}
+
+
+function goSH(val){         
+	if (val=='CH'){
+		if (window.location.href.indexOf('?')>=0){	       
+			window.location.href=window.location.href+"&shcfr=1";
+	   }else{
+		   window.location.href=window.location.href+"?shcfr=1";	       
+	   }
+	
+	}else{	
+	//2020203 CR 0412 window.location.href="search_result.jsp?"+val;
+	window.location.href="search_result_form.jsp?"+val;
+	}
+}
+function gosort(val){         
+        document.forms[0].order.value=val;        
+	document.forms[0].submit();
+	return
+}
+//202003 CR change name from makexmlhttp to makexmlhttp20
+function makexmlhttp(ct){
+        
+        document.forms[0]['selcourtype'].length=0;
+        if (ct==''){
+        	document.forms[0]['selcourtype'].options[0]=new Option('-------------','',false,true);        	        	
+        }else if (document.forms[0]['selcourtname'].length == 3){                
+        	document.forms[0]['selcourtype'].options[0]=new Option('Criminal Case','CC',false,true);
+        }else{
+        
+	  	var http_request =new getxmlhttpobject();            
+	  	var parameters = 'ccs='+ct+'&changed_lan=EN';
+	  	//alert(parameters);
+	  	var url='/lrs/JType.xml';
+	  	var nodes=null;  	
+	  	xmlObjectConnect(http_request,url,"post",parameters,funAllDone,nodes);     	
+  	}
+}
+
+function funAllDone(xml_http,nodes)   
+{   
+
+          if(xml_http.responseText.length   >   150)   
+          {   
+                  {   
+                          var   xmldoc = xml_http.responseXML;       
+                          
+                          var nodes = xmldoc.getElementsByTagName('c');                               
+                          for (var i=0; i<nodes.length; i++) {		          
+		          	var v_ct = getTextByTagName(nodes[i], 'ct'); 
+		          	var v_cs = getTextByTagName(nodes[i], 'cs'); 
+			          if (v_cs==''){
+			          	document.forms[0]['selcourtype'].options[i]=new Option(v_ct,v_cs,false,true); 
+			          }else
+			          	document.forms[0]['selcourtype'].options[i]=new Option(v_ct,v_cs); 		          
+			 } 
+                  }   
+          }   
+          
+}	
+function getAppealfrm_getcrtn(val){
+         document.forms[0]['selcourtname'].length=0;
+        
+        // val:0 show all, val:1 DB=RS, val:2 DB=PD, val: 3 DB=RV selDatabase
+        //202005 CR val:0 show all, val:1 DB=RS, val:2 DB=PD, val: 3 DB=RV selDatabase2
+        if (val==0){
+               var cl = new Array("-------------","Court of Appeal of the High Court","Court of First Instance of the High Court","District Court","Family Court");
+var clv = new Array("","CA","HC","DC","FC");
+
+	        
+        }else if (val==1){
+              var cl = new Array("-------------","Court of First Instance of the High Court","District Court");
+              var clv = new Array("","HC","DC");
+        }else if ((val==2)|(val==3)){
+              var cl = new Array("-------------");
+              var clv = new Array("");
+        }
+        for (var i=0; i < cl.length;i++){			
+			if (clv[i]==''){
+				          	document.forms[0]['selcourtname'].options[i]=new Option(cl[i],clv[i],false,true); 
+				          }else{
+				          	document.forms[0]['selcourtname'].options[i]=new Option(cl[i],clv[i]); 		          
+			} 
+	}
+
+}
+function getAppealfrm_db(frm){
+
+  if (document.forms[0]['selcourtname']){
+	  var selected_values=getOpts(frm.selDatabase2);
+	  var optval=0;
+	  var opttmp=0;
+	  
+	  if (selected_values.length>0){
+		  if (selected_values.length==1){
+		     if (selected_values[0].indexOf('RV')>=0){
+		             optval=3;	              
+		      }else if (selected_values[0].indexOf('RS')>=0){
+		             optval=1;	              
+		      }else if (selected_values[0].indexOf('JU')>=0){
+		             optval=0;	              
+		      }else{
+		             optval=2;
+		      }        	      
+		  }else{		   
+		      
+		       if  (havevalue(frm.selDatabase2,'JU')){
+		       	optval=0;
+		       }else if (havevalue(frm.selDatabase2,'RS')){
+		       	optval=1;
+		       }else if (havevalue(frm.selDatabase2,'RV') & !(havevalue(frm.selDatabase2,'RS'))){
+		       	optval=3;
+		       }else{
+		       	optval=2;
+		       }				                     
+		  }		  
+		  getAppealfrm_getcrtn(optval);
+		  getAppealfrm_onchange();
+	  }
+  } 
+}
+function onchangedb(frm,val){
+  if (document.forms[0]['selcourtname'])
+  getAppealfrm_db(frm);
+ 
+  with(frm){     
+     frm.selall2.checked =false;
+     
+  }
+}
+
+
+function onchangeschct(frm,val){
+	if (document.forms[0]['sel'])
+		  getAppealfrm_db(frm);
+		  //getAppealfrm_ct(frm);
+		//alert("ct");
+	with(frm){     
+	   frm.selallct.checked =false;
+	}
+}
+
+function getAppealfrm_onchange(){
+        if (document.forms[0]['selcourtname'])
+	with (document.forms[0]['selcourtname']){	        
+		if (selectedIndex!=0){			        
+			makexmlhttp(options[selectedIndex].value);
+		}else{
+			makexmlhttp('');
+		}
+	}	
+}
+function init(){
+
+     if (document.forms[0]['selcourtname']){
+	  
+	    getAppealfrm_db(document.forms[0]);
+	
+     }
+      
+}
+-->
+
+</script>
+ <link rel="stylesheet" href="/lrs/css/bootstrap.css">
+ <!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+ <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.21.4/dist/bootstrap-table.min.css">-->
+  <link rel="stylesheet" href="/lrs/css/bootstrap-table.min.css">
+ <link rel="stylesheet" href="/lrs/css/font-awesome-all.min.css">
+ <link rel="stylesheet" href="/lrs/css/styles-res.css">
+ <style>
+  @media (max-width: 768px) {
+	 #searchboxtitle
+	 {
+		width: 55%
+	 }
+	 .searchform.input-group-prepend, .input-group-text
+	 {
+		 width: 100%
+	 }
+ }
+
+ body
+{
+	background: none
+}	
+  .hidden
+  {
+  	display: none
+  }
+  .table td {
+  	border-: 1px solid #e1cc97
+  }
+  .list-group-item
+  {
+  	border-radius: 5px;
+  	border-color: #e1cc97;
+  	border: 1px solid #e1cc97 !important
+  }
+  .col-form-label
+  {
+  	padding-top:calc(.275rem + 1px);
+  	padding-bottom:calc(.275rem + 1px);
+  
+  }
+  
+  .bootstrap-select
+  {
+  border: solid 1px #1e3f6a;
+  
+  }
+  
+  .bootstrap-select .dropdown-toggle
+  {
+  padding:2px 5px
+  }
+  
+  .form-group
+  {
+  margin-bottom: 0.1rem !important
+  }
+  #selSchct option
+  {
+  font-weight: 500
+  }
+  
+  .content-header
+  {
+  width: 100%;
+  margin-left: 0
+  
+  }
+  .page-content {
+  width: 100%;
+    margin-left: 0
+  
+  } 
+  .card-header button .fa-caret-right
+  {
+  display: none 
+  }
+  .card-header button .fa-caret-down
+  {
+  display: inline !important
+  }
+  
+  .card-header button.collapsed .fa-caret-right
+  {
+  display: inline !important
+  }
+  .card-header button.collapsed .fa-caret-down
+  {
+  display: none !important
+  }
+  .view-match
+  {
+  font-weight:500;
+  font-size:0.85rem;
+  padding:2px
+  }
+  .card-view .container-fluid
+  {
+  /*padding: 5px*/
+  }
+  .input-group input, .input-group select
+  {
+  border-color:#aaa
+  }
+  
+  
+  .modal-dialog.modal-fullscreen, .modal-fullscreen .modal-content
+  {
+  width: 100% !important;
+  max-width: 100% !important
+  }
+  
+    #table 
+  {
+	  background-color:#fff
+  }
+  #table td
+  {
+	  border-bottom: 2px solid #aaa;
+	  border-left:none;
+	  border-right:none;
+  }
+  .tab-pane 
+  { border: 2px solid #ddd;
+	border-top: none;
+	border-radius: 5px;
+	border-top-left-radius: 0;
+	border-top-left-radius: 0;
+
+  }
+  .table-bordered
+  {
+	  border: none
+  }
+  #selallct option:checked
+  {
+	  background-color: #007bff !important;
+  color: #fff !important;
+  }
+  
+  .card-views
+  {
+	  /*margin-left:20px*/
+  }
+  .card-view-value .row div
+  {
+	/*  margin-top: 4px;
+	  margin-bottom: 4px; */
+  }
+  .card-view-value .reportage
+  {	  
+	margin-left: 0 !important
+  }
+  .card-view-value a.view-match
+  {
+  /*position: absolute;
+  float: right;
+  padding: 5px 10px;
+  margin-left: 70%;
+  margin-top: -8%;*/
+  margin-top: 10px
+  }
+    .nav-tabs .nav-link
+  {
+	  padding:0.5rem 1rem;
+	  margin-bottom: -1px;
+	background-color: #ddd;
+	border: 2px solid #fff;
+	border-bottom: none;
+  }
+  
+  .nav-tabs .nav-link.active {
+  color: #495057;
+  background-color: #daebcb;
+border: 2px solid #fff;
+border-bottom: none;
+	
+  }
+  .nav-tabs
+  {
+	  border-bottom: none
+  }
+  .tab-pane
+  {
+	  background-color: #daebcb;
+  }
+  .page-item
+  {
+	  float:left
+  }
+
+   label.input-group-text
+  {
+	  min-width:280px;
+	  background-color:#eee;
+	  border-color:#aaa
+  }
+  a.popover-dismiss
+  {
+	  color:#0000CC
+  }
+    .page-content {
+
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+  box-shadow: none;
+  }
+  
+  .custom-select 
+	{
+		background-image:  url(/lrs/images/dropdown.jpg)
+	}
+		.custom-control-label:before
+	{
+		display: none
+	}
+ </style>
+</head>
+
+<body onload="document.forms[0].txtSearch.select();init();yearOptions();getDateVal();">
+
+<!--
+<div id="example" class="divstyle2"><p class="smalltxt">Example: 26/2/1998 or 26/2/98</p></div>
+<div id="casenumber" class="divstyle2"><p class="smalltxt">Example: DCCC350/2006</p></div>
+<div id="egNCN" class="divstyle2"><p class="smalltxt">Example: [2018] HKCA 14</p></div>
+-->
+
+
+<!-- <form name="frm_search" method=get target=resultpage onSubmit="javascript:return FORM_SUBMIT(this);" action="">   -->
+<!-- <table class="tablestyle1" border="0"> -->
+
+
+
+
+
+<!--20231024TEST TRY INPUT txtSearch Table #1464 START -->
+
+<!--Start Content-->
+ <!-- Modal -->
+ <div class="modal fade " id="caseTypeListModal" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+   <div class="modal-content">
+    <div class="modal-header" style="background:#ebdccb">
+     <h5 class="modal-title" id="staticBackdropLabel">Search - Help</h5>
+     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+      <span aria-hidden="true">×</span>
+     </button>
+    </div>
+    <div class="modal-body mt-0 pt-0">
+
+    </div>
+
+    <div class="modal-footer">
+     <button type="button" class="btn btn-primary" data-dismiss="modal" style="min-width:90px;background:#1e3f6a">Close</button>
+    </div>
+   </div>
+  </div>
+ </div>
+
+ <!-- End vertical navbar -->
+ <!-- Toggle button -->
+ <div class="content-header">
+  <div class="">
+   <!--<nav class="navbar navbar-expand-md navbar-light border-bottom " style="background-color:#ebdccb;border-bottom: none!important">-->
+   
+   <!--</nav>-->
+  </div>
+ </div>  
+
+
+	  
+
+
+
+
+
+
+
+
+
+<script language="JavaScript" type="text/JavaScript">
+
+function advSearch(frm1){
+	frm1.isadvsearch.value="0";	
+	    frm1.submit();	    	
+}
+
+
+                
+			          
+</script>
+
+<script type="text/javascript">
+var numDays = {
+                '1': 31, '2': 28, '3': 31, '4': 30, '5': 31, '6': 30,
+                '7': 31, '8': 31, '9': 30, '10': 31, '11': 30, '12': 31
+              };
+
+function setDays(oMonthSel, oDaysSel, oYearSel)
+{
+	var nDays, oDaysSelLgth, opt, i = 1;
+	nDays = numDays[oMonthSel[oMonthSel.selectedIndex].value];
+
+	var oForm = oMonthSel.form;
+	var day1 = oDaysSel.options[oDaysSel.selectedIndex].value;
+	var month = oMonthSel.options[oMonthSel.selectedIndex].value;	
+	var year = oYearSel.options[oYearSel.selectedIndex].value;	
+	var no = 10;	
+	
+	
+	if (day1 > 0 && day1 <= 31 && month > 0 && month < 13 && year > 1900 && year < 2500){	
+	oForm.txtSearch3.value = day1 + '/' + month + '/' + year;
+		} else if (month > 0 && month < 13 && year > 1900 && year < 2500){		
+		oForm.txtSearch3.value ='/' + month + '/' + year;
+		} else if (day1 > 0 && day1 <= 31 && month > 0 && month < 13 && year === ""){
+		oForm.txtSearch3.value = day1 + '/' + month + '/';				
+		} else if (day1 > 0 && day1 <= 31 && year === ""){
+		oForm.txtSearch3.value = day1 + '/'+'/';		
+		} else if (day1 === "" && month > 0 && month < 13 && year === ""){
+		oForm.txtSearch3.value ='/' + month + '/';		
+		} else if (day1 > 0 && day1 <= 31 && year > 1900 && year < 2500){
+		oForm.txtSearch3.value = day1 + '/' + '/' + year;		
+		}else if (day1 === "" && year > 1900 && year < 2500){		
+		oForm.txtSearch3.value ='//' + year;
+		}else if (day1 === "0" && month === "0" && year > 1900){
+		oForm.txtSearch3.value ='//' + year;
+		}else{		
+		oForm.txtSearch3.value ='';		
+		}
+}
+//202003 CR 0419 
+
+function yearOptions(){      			
+            var myselectyr = document.getElementById("year");
+			//alert("yearOptions");
+			var today = new Date();
+			var currentYear = new Date().getFullYear();            
+            var optionValues;
+			//alert(currentYear);
+			for (var y = currentYear; y >=1945; y--){	
+				var option = document.createElement('option');
+				option.value = y;
+				option.innerHTML = y;
+				myselectyr.appendChild(option);				
+			}
+}
+
+function getDateVal(){
+         var dayelement = document.forms[0].day1;
+         for(x = 0; x < dayelement.length; x++){
+        	 	if(dayelement.options[x].value == "11"){
+        	 		dayelement.options[x].selected = true;			 
+                       break;
+                 } 
+         }
+         var mthelement = document.forms[0].month;
+         for(x = 0; x < mthelement.length; x++){
+                 if(mthelement.options[x].value == "3"){
+                       mthelement.options[x].selected = true;
+					   //alert("month");
+                       break;
+                 } 
+         }
+		  var yrelement = document.forms[0].year;		  
+         for(x = 0; x < yrelement.length; x++){
+                 if(yrelement.options[x].value == "1998"){
+                	 yrelement.options[x].selected = true;
+					 //alert("year");
+                       break;
+                 } 
+         }
+    }
+//20200414 E
+</script>
+
+ <!-- Page content holder -->
+  <div class="page-content" id="content">
+
+  <form name="frm_search" id="frm_search" method="get" action="" onsubmit="javascript:return FORM_SUBMIT(this);">
+	<input type="hidden" name="isadvsearch" value="1">
+  
+  <div class="row justify-content-between pl-4 pt-2 pb-0 pr-4" style="background-color:#ebdccb;">
+     <!--<button class="navbar-toggler btn btn-light bg-white rounded-pill shadow-sm px-4" data-bs-toggle="collapse" aria-expanded="false" id="sidebarCollapse" type="button"><i class="fa fa-bars mr-2"></i><small class="text-uppercase font-weight-bold"></small></button>-->
+      <div class="col-md-6 col-xs-3 p-2" id="searchboxtitle">    
+      <h4 style="color:#674300"><b>Search Form</b></h4>
+     </div>    
+	 
+ 	
+	  <div class="col-sm-5 col-md-6 textsize-control" role="group" aria-label="Text Size Control" style="width: 160px; text-align:right;margin-bottom:auto">
+            <button type="button" class="btn active" id="smallText" style="height: 32px;border:1px solid;border-radius: 16px;padding: 0px 11px;margin-right:-1px"><span style="display:block;font-size:12px!important">A</span></button>
+            <button type="button" class="btn" id="mediumText" style="height:32px;border:1px solid;border-radius: 16px;padding: 0 8px;"><span style="display:block;font-size:20px!important">A</span></button>
+            <button type="button" class="btn" id="largeText" style="height:32px;border:1px solid;border-radius: 16px;padding: 0 6px;margin-left:-1px"><span style="display:block;font-size:26px!important">A</span></button>
+        </div>
+		
+	
+    
+	 
+	
+    </div>
+  
+  
+  <!-- Demo content -->
+  <div class="row pt-0 pl-2 pb-2 pr-2 justify-content-end" style="background:#ebdccb">
+
+    <div class="col-lg-6" style="">    
+	<div style="float:right">
+	<a href="./search_result.jsp?stem=1&amp;txtselectopt=1&amp;isadvsearch=1&amp;selall=1&amp;selallct=1" class="m1-1 mr-1"><u>Advanced Search</u></a>&nbsp;|&nbsp;
+     <a class="m1-1 mr-1" href="javascript:commonpop('https://legalref.judiciary.hk/lrs/en/help/helpsearch.html#basic','helpmenu',767,500,'10','10','yes','no','no','no','yes')"><u>Search Help</u></a>&nbsp;|&nbsp;
+      <a class="m1-1 mr-1" href="javascript:commonpop('https://legalref.judiciary.hk/lrs/en/help/helpvideo.html','helpmenu',767,500,'10','10','yes','no','no','no','yes')"><u>Video Help</u></a>
+    </div>
+    </div>
+   </div>
+   
+   
+  
+   
+
+   <div class="row p-2" style="margin-top:-8px">
+   
+    <div class="col-lg-12" style="padding:0">
+  
+  <ul class="nav nav-tabs" id="myTabs" style="">
+	  
+      <li class="nav-item">
+       <a class="nav-link active" data-toggle="tab" href="#tab1" id="result-tab"><b>Search Result</b></a>
+      </li>
+	  
+      <li class="nav-item">
+       <a class="nav-link " data-toggle="tab" href="#tab2" id="form-tab"><b>Search Form</b></a>
+      </li>
+     </ul>
+
+     <div class="tab-content" style="height:100%">
+      <div class="tab-pane fade " id="tab2">
+
+       <div class="container-fluid">
+        <div class="row">
+         <div class="col-lg-8 offset-lg-2" style="text-align:right">
+
+          <button type="submit" class="btn btn-primary mt-2 mr-3" style="min-width:90px;background:#1e3f6a">
+           <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"></path>
+           </svg>&nbsp;GO!</button>
+           <button type="button" class="btn btn-secondary mt-2 " style="min-width:90px" onclick="window.location.href='search_result_form.jsp?isadvsearch=1&amp;stem=1&amp;selall2=1&amp;selallct=1&amp;'">New search</button>
+         </div>
+        </div>
+
+        <div class="row justify-content-start pl-lg-4 pr-lg-4">
+		    
+		   <div class="col-lg-10 ">
+		    <p class="mb-0 mt-2"><b>A. Search by Full Text Options:</b></p>
+		 <div class="input-group mb-2">
+  <div class="searchform input-group-prepend">
+    <label id="selBoolean" name="txtselectopt" title="select option1" class="input-group-text" for="">1.&nbsp;&nbsp;<u>any of these words</u></label>
+  </div>
+    <input name="txtselectopt" type="hidden" size="20" value="1">
+    <input type="text" class="form-control" placeholder="" name="txtSearch" id="txtSearch" title="txtSearch" value="">
+
+</div>
+ <div class="input-group mb-2">
+  <div class="searchform input-group-prepend">
+    <label id="selBoolean1" name="txtselectopt1" title="select option2" class="input-group-text" for="">2.&nbsp;&nbsp;<u>these words in any order</u></label>
+  </div>
+    <input name="txtselectopt1" type="hidden" size="20" value="2">
+    <input type="text" class="form-control" name="txtSearch1" id="txtSearch1" title="txtSearch1" placeholder="" value="">
+
+</div>	 
+<div class="input-group mb-2">
+  <div class="searchform input-group-prepend">
+    <label id="selBoolean2" name="txtselectopt2" title="select option3" class="input-group-text" for="">3.&nbsp;&nbsp;<u>this phrase</u></label>
+  </div>
+    <input name="txtselectopt2" type="hidden" size="20" value="3">
+    <input type="text" class="form-control" name="txtSearch2" id="txtSearch2" title="txtSearch2" placeholder="" value="">
+
+</div>	 
+ <div class="form-group row">
+           <div class="col-md-8 ">
+            <div class="custom-control custom-checkbox my-1 mr-sm-2">
+			
+			<input type="checkbox" class="form-check-input" title="stem" id="stem" name="stem" value="1" checked="">
+			<label class="custom-control-label" for="stem"><a href="javascript:commonpop('/lrs/en/help/help_stemming.htm','stemminghelp',400,100,'no','no',1,1,'no','no','no')" style="" role="button" class="popover-stemming" data-toggle="popover" title="" data-original-title="-">Stemming</a> <small>(e.g. find "taxes" if your search word is "tax")</small></label>
+				
+			
+             <!--<input type="checkbox" class="custom-control-input" title="stem" id="stem" name="stem" value="1" checked />
+             <label class="custom-control-label" for="stem"><a href="javascript:commonpop('/lrs/en/help/help_stemming.htm','stemminghelp',400,100,'no','no',1,1,'no','no','no')" style="" role="button" class="popover-stemming" data-toggle="popover" title="-">Stemming</a> <small>(e.g. find "taxes" if your search word is "tax")</small></label>-->
+            </div>
+
+           </div>
+          </div>
+</div>
+
+
+
+         <div class="col-lg-10">
+          <p class="mb-0 mt-2"><b>B. Search by Case Details:</b></p>
+		  
+		  <div class="input-group mb-2">
+			<div class="searchform input-group-prepend">
+			<label for="txtselectopt3" class="input-group-text">4.&nbsp;&nbsp;<u>Date of Judgment</u></label>
+			<!--<span class="input-group-text">$</span>
+			<span class="input-group-text">0.00</span>-->
+			</div>
+			<input name="txtselectopt3" type="hidden" size="20" value="5">
+			<input class="smalltxt" name="txtSearch3" type="hidden" id="txtSearch3" title="txtSearch3" size="25" value="11/3/1998">
+		   
+			<select class="selectpicker custom-select" title="Day" data-width="auto" name="day1" id="day1" onchange="setDays(month,this,year)">
+            <option selected="" class="smalltxt" value="">Day&nbsp;</option>
+            <option value="0">---</option>
+             <option value="1">1</option>
+             <option value="2">2</option>
+             <option value="3">3</option>
+             <option value="4">4</option>
+             <option value="5">5</option>
+             <option value="6">6</option>
+             <option value="7">7</option>
+             <option value="8">8</option>
+             <option value="9">9</option>
+             <option value="10">10</option>
+             <option value="11">11</option>
+             <option value="12">12</option>
+             <option value="13">13</option>
+             <option value="14">14</option>
+             <option value="15">15</option>
+             <option value="16">16</option>
+             <option value="17">17</option>
+             <option value="18">18</option>
+             <option value="19">19</option>
+             <option value="20">20</option>
+             <option value="21">21</option>
+             <option value="22">22</option>
+             <option value="23">23</option>
+             <option value="24">24</option>
+             <option value="25">25</option>
+             <option value="26">26</option>
+             <option value="27">27</option>
+             <option value="28">28</option>
+             <option value="29">29</option>
+             <option value="30">30</option>
+             <option value="31">31</option>
+            </select>
+<select class="selectpicker custom-select" title="Month" data-width="auto" name="month" id="month" onchange="setDays(this,day1,year)">
+            <option selected="" class="smalltxt" value="">Month</option>
+			<option value="0">---</option>
+             <option value="1">1</option>
+             <option value="2">2</option>
+             <option value="3">3</option>
+             <option value="4">4</option>
+             <option value="5">5</option>
+             <option value="6">6</option>
+             <option value="7">7</option>
+             <option value="8">8</option>
+             <option value="9">9</option>
+             <option value="10">10</option>
+             <option value="11">11</option>
+             <option value="12">12</option>
+            </select>
+
+            <select class="selectpicker custom-select" title="Year" data-width="auto" name="year" id="year" onchange="setDays(month,day1,this)">
+             <option selected="" class="smalltxt" value="">Year&nbsp;&nbsp;</option>
+             <option value="0">---</option>
+            <option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2022">2022</option><option value="2021">2021</option><option value="2020">2020</option><option value="2019">2019</option><option value="2018">2018</option><option value="2017">2017</option><option value="2016">2016</option><option value="2015">2015</option><option value="2014">2014</option><option value="2013">2013</option><option value="2012">2012</option><option value="2011">2011</option><option value="2010">2010</option><option value="2009">2009</option><option value="2008">2008</option><option value="2007">2007</option><option value="2006">2006</option><option value="2005">2005</option><option value="2004">2004</option><option value="2003">2003</option><option value="2002">2002</option><option value="2001">2001</option><option value="2000">2000</option><option value="1999">1999</option><option value="1998">1998</option><option value="1997">1997</option><option value="1996">1996</option><option value="1995">1995</option><option value="1994">1994</option><option value="1993">1993</option><option value="1992">1992</option><option value="1991">1991</option><option value="1990">1990</option><option value="1989">1989</option><option value="1988">1988</option><option value="1987">1987</option><option value="1986">1986</option><option value="1985">1985</option><option value="1984">1984</option><option value="1983">1983</option><option value="1982">1982</option><option value="1981">1981</option><option value="1980">1980</option><option value="1979">1979</option><option value="1978">1978</option><option value="1977">1977</option><option value="1976">1976</option><option value="1975">1975</option><option value="1974">1974</option><option value="1973">1973</option><option value="1972">1972</option><option value="1971">1971</option><option value="1970">1970</option><option value="1969">1969</option><option value="1968">1968</option><option value="1967">1967</option><option value="1966">1966</option><option value="1965">1965</option><option value="1964">1964</option><option value="1963">1963</option><option value="1962">1962</option><option value="1961">1961</option><option value="1960">1960</option><option value="1959">1959</option><option value="1958">1958</option><option value="1957">1957</option><option value="1956">1956</option><option value="1955">1955</option><option value="1954">1954</option><option value="1953">1953</option><option value="1952">1952</option><option value="1951">1951</option><option value="1950">1950</option><option value="1949">1949</option><option value="1948">1948</option><option value="1947">1947</option><option value="1946">1946</option><option value="1945">1945</option></select>		
+
+			
+			 
+			  <div class="input-group-append">
+<a href="#" style="" role="button" class="input-group-text popover-dismiss" data-toggle="popover" title="" data-content="Example: 26/2/1998, 2/1998 or 1998" data-original-title="Example"><i class="fa-solid fa-circle-info" style="font-size:1.3rem"></i></a>
+			 </div>
+</div>
+
+
+<!-- 202010 #4 -->
+         
+<!-- 202010 #5 -->
+
+<div class="input-group mb-2">
+  <div class="searchform input-group-prepend">
+    <label id="selBoolean4" name="txtselectopt4" title="select option5" class="input-group-text" for="">5.&nbsp;&nbsp;<u>Coram of Judgment</u></label>
+  </div>
+      <input name="txtselectopt4" type="hidden" size="20" value="6">
+     <input type="text" class="form-control" placeholder="" name="txtSearch4" id="txtSearch4" title="txtSearch4" value="">
+
+</div>	 
+<div class="input-group mb-2">
+  <div class="searchform input-group-prepend">
+    <label id="selBoolean5" name="txtselectopt5" title="select option6" class="input-group-text" for="">6.&nbsp;&nbsp;<u>Parties of Judgment </u></label>
+  </div>
+     <input name="txtselectopt5" type="hidden" size="20" value="7">
+     <input type="text" class="form-control" placeholder="" name="txtSearch5" id="txtSearch5" title="txtSearch5" value="">
+
+</div>	 
+<div class="input-group mb-2">
+  <div class="searchform input-group-prepend">
+    <label id="selBoolean6" name="txtselectopt6" title="select option7" class="input-group-text" for="">7.&nbsp;&nbsp;<u>Representation</u></label>
+  </div>
+    <input name="txtselectopt6" type="hidden" size="20" value="8">
+   <input type="text" class="form-control" placeholder="" name="txtSearch6" id="txtSearch6" title="txtSearch6" value="">
+
+</div>	 
+<div class="input-group mb-2">
+  <div class="searchform input-group-prepend">
+    <label id="selBoolean7" name="txtselectopt7" title="select option8" class="input-group-text" for="">8.&nbsp;&nbsp;<u>Offence</u></label>
+  </div>
+   <input name="txtselectopt7" type="hidden" size="20" value="9">
+  <input type="text" class="form-control" placeholder="" name="txtSearch7" id="txtSearch7" title="txtSearch7" value="">
+
+</div>	 
+
+          <!--<div class="form-group row ml-1">
+           <label id="selBoolean4"  name="txtselectopt4" title="select option5" class="col-sm-4 col-md-5 col-lg-3 col-form-label">5. <u>Coram of Judgment</u>
+           <input name="txtselectopt4" type="hidden" size="20" value="6">
+           </label>
+           <div class="col-sm-6 col-md-6 input-group-sm">
+            <input type="text" class="form-control" placeholder="" name="txtSearch4" id="txtSearch4" title="txtSearch4" value="">
+           </div>
+          </div>-->
+<!-- 202010 #6 -->
+          <!--<div class="form-group row  ml-1">
+           <label id="selBoolean5"  name="txtselectopt5" title="select option6" class="col-sm-4 col-md-5 col-lg-3 col-form-label">6. <u>Parties of Judgment </u>
+           <input name="txtselectopt5" type="hidden" size="20" value="7">
+           </label>
+           <div class="col-sm-6 col-md-6 input-group-sm">
+            <input type="text" class="form-control" placeholder="" name="txtSearch5" id="txtSearch5" title="txtSearch5" value="">
+           </div>
+          </div>-->
+<!-- 202010 #7 -->
+          <!--<div class="form-group row  ml-1">
+           <label id="selBoolean6"  name="txtselectopt6" title="select option7" class="col-sm-4 col-md-5 col-lg-3 col-form-label">7. <u>Representation</u>
+           <input name="txtselectopt6" type="hidden" size="20" value="8">
+           </label>
+           <div class="col-sm-6 col-md-6 input-group-sm">
+            <input type="text" class="form-control" placeholder="" name="txtSearch6" id="txtSearch6" title="txtSearch6" value="">
+           </div>
+          </div>-->
+<!-- 202010 #8 -->
+          <!--<div class="form-group row h-20 ml-1">
+           <label id="selBoolean7"  name="txtselectopt7" title="select option8" class="col-sm-4 col-md-5 col-lg-3 col-form-label">8. <u>Offence</u>
+           <input name="txtselectopt7" type="hidden" size="20" value="9">
+           </label>
+           <div class="col-sm-6 col-md-6 input-group-sm">
+            <input type="text" class="form-control" placeholder="" name="txtSearch7" id="txtSearch7" title="txtSearch7" value="">
+           </div>
+          </div>-->
+         </div>
+<!-- 202010 #CL -->
+         <div class="col-lg-10">
+          <div class="form-group row">
+           <div class="col-sm-4 col-md-5 col-lg-3 col-form-label">
+            <p><b>Court level(s) filter &nbsp;:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b> </p>
+
+            <div id="selRemark" style="position: relative; 
+				height: 82px;
+				float:left; margin-left:12px">
+             <div class="form-check" style="
+                    position: relative;
+                    width: auto;
+                    height: 30px;
+                     ">
+
+              <input type="checkbox" class="form-check-input" name="selallct" title="selallct" value="1" onclick="javascript:databaseselectallct(this.form,this);getAppealfrm_ct(this.form);" checked="">
+              <label class="form-check-label" for="exampleCheck1">select all </label>
+              <p class="smalltxt mt-1">CTRL + click to select multiple court level(s)</p>
+             </div>
+
+            </div>
+
+           </div>
+           <div class="col-sm-6 col-md-7 col-lg-6 pl-4 input-group">
+
+            <select name="selSchct" title="selSchct" size="8" multiple="" id="selSchct" onchange="javascript:onchangeschct(this.form,this.value);" class="form-select" aria-label="select Court level(s)" style="padding:0;width:auto;min-width:200px;float:left">
+             <option class="seloptionStyle2" value="FA" style="border-bottom:1px solid #999;padding:5px" selected="">Court of Final Appeal</option>
+             <option class="seloptionStyle2" value="CA" style="border-bottom:1px solid #999;padding:5px" selected="">Court of Appeal</option>
+             <option class="seloptionStyle2" value="HC" style="border-bottom:1px solid #999;padding:5px" selected="">Court of First Instance</option>
+             <option class="seloptionStyle2" value="CT" style="border-bottom:1px solid #999;padding:5px" selected="">Competition Tribunal</option>
+             <option class="seloptionStyle2" value="DC" style="border-bottom:1px solid #999;padding:5px" selected="">District Court</option>
+             <option class="seloptionStyle2" value="FC" style="border-bottom:1px solid #999;padding:5px" selected="">Family Court</option>
+             <option class="seloptionStyle2" value="LD" style="border-bottom:1px solid #999;padding:5px" selected="">Lands Tribunal</option>
+             <option class="seloptionStyle2" value="OT" style="border-bottom:1px solid #999;padding:5px" selected="">Other Court Levels</option>
+            </select>
+
+           </div>
+          </div>
+
+         </div>
+
+<!-- 202010 #On Appeal -->
+         <div class="col-lg-10 mt-2">
+
+		<div class="input-group mb-2">
+	<div class="searchform input-group-prepend">
+   <label for="txtselectopt3" class="input-group-text">On appeal from  : </label>
+
+  </div>
+<select name="selcourtname" id="selcourtname" title="selcourtname" onchange="makexmlhttp(this.value);" class="custom-select" style="border: 1px solid #bbb;"><option value="">-------------</option><option value="CA">Court of Appeal of the High Court</option><option value="HC">Court of First Instance of the High Court</option><option value="DC">District Court</option><option value="FC">Family Court</option></select><select name="selcourtype" id="selcourtype" title="selcourtype" class="custom-select" style="border: 1px solid #bbb;"><option value="">-------------</option></select>
+		
+</div>
+		 
+       
+
+         </div>
+		 
+		
+		
+		
+		
+         <div class="col-lg-10">
+		     <p class="mb-0 mt-3"><b>C. Search by Neutral Citation Number, Case Number or Reportage:</b></p>
+		 <div class="input-group mb-2">
+			<div class="searchform input-group-prepend">
+				<label id="selBoolean8" name="txtselectopt8" title="select option9" class="input-group-text" style="min-width:250px" for="">9.&nbsp;&nbsp;<u>Neutral Citation Number of Judgment 	</u></label>
+			</div>
+			<input name="txtselectopt8" type="hidden" size="20" value="10">
+			<input type="text" class="form-control" placeholder="" id="txtSearch8" name="txtSearch8" title="txtSearch8" value="">
+			<div class="input-group-append">
+				<a href="#" style="" role="button" class="input-group-text popover-dismiss" data-toggle="popover" title="" data-content="[2018] HKCA 14" data-original-title="Example"><i class="fa-solid fa-circle-info" style="font-size:1.5rem"></i></a>		
+			</div>
+		</div>	
+		 
+      
+<!-- 202010 #9 -->
+          <!--<div class="form-group row ml-1">
+           <label id="selBoolean8"  name="txtselectopt8" title="select option9" class="col-sm-4 col-md-5 col-lg-4 col-form-label">9. <u>Neutral Citation Number of Judgment </u>
+           <input name="txtselectopt8" type="hidden" size="20" value="10">
+           </label>
+           <div class="col-sm-6 col-md-5 input-group-sm">
+            <input type="text" class="form-control" placeholder="" id="txtSearch8" name="txtSearch8" title="txtSearch8" value="">
+           </div> <a href="#" style="" role="button" class="popover-dismiss" data-toggle="popover" title="" data-content="[2018] HKCA 14" data-original-title="Example"><i class="fa-solid fa-circle-info" style="font-size:1.7rem"></i></a>
+          </div>-->
+<!-- 202010 #10 -->
+
+		 <div class="input-group mb-2">
+			<div class="searchform input-group-prepend">
+				<label id="selBoolean9" name="txtselectopt9" title="select option10" class="input-group-text" style="min-width:250px" for="">10.&nbsp;&nbsp;<u>Case Number of Judgment </u></label>
+			</div>
+			 <input name="txtselectopt9" type="hidden" size="20" value="4">
+			 <input type="text" class="form-control" placeholder="" id="txtSearch9" name="txtSearch9" title="txtSearch9" value="">
+			<div class="input-group-append">	
+				<a href="#" style="" role="button" class="input-group-text popover-dismiss" data-toggle="popover" title="" data-content="FACV 18/2000" data-original-title="Example"><i class="fa-solid fa-circle-info" style="font-size:1.5rem"></i></a>
+			</div>
+		</div>	
+
+        <!--<div class="form-group row ml-1">
+           <label id="selBoolean9"  name="txtselectopt9" title="select option10" class="col-sm-4 col-md-5 col-lg-4 col-form-label">10. <u>Case Number of Judgment </u>
+           <input name="txtselectopt9" type="hidden" size="20" value="4">
+           </label>
+           <div class="col-sm-6 col-md-5 input-group-sm">
+            <input type="text" class="form-control" placeholder="" id="txtSearch9" name="txtSearch9" title="txtSearch9" value="">
+           </div>
+           <a href="#" style="" role="button" class="popover-dismiss" data-toggle="popover" title="" data-content="FACV 18/2000" data-original-title="Example"><i class="fa-solid fa-circle-info" style="font-size:1.7rem"></i></a>
+          </div>-->
+<!-- 202010 #11 ********************** -->
+
+	 <div class="input-group mb-2">
+			<div class="searchform input-group-prepend">
+				<label id="selBoolean10" name="txtselectopt10" title="select option11" class="input-group-text" for="" style="min-width:250px">11.&nbsp;&nbsp;<u>Reported Citation</u></label>
+			</div>
+			 <input name="txtselectopt10" type="hidden" size="20" value="12">
+			 <input type="text" class="form-control" placeholder="" id="txtSearch10" name="txtSearch10" title="txtSearch10" value="">
+			<div class="input-group-append">	
+				
+				  <a href="#" role="button" class="input-group-text popover-dismiss" data-toggle="popover" title="" data-content="(2021) 24 HKCFAR 116" data-original-title=""><i class="fa-solid fa-circle-info" style="font-size:1.3rem"></i></a>
+			</div>
+		</div>	
+
+
+          <!--div class="form-group row ml-1">
+           <label id="selBoolean10"  name="txtselectopt10" title="select option11" class="col-sm-4 col-md-5 col-lg-4 col-form-label">11. <u>Reported Citation</u>
+		   <input name="txtselectopt10" type="hidden" size="20" value="12">
+		   </label>
+           <div class="col-sm-6 col-md-5 input-group-sm">
+            <input type="text" class="form-control" placeholder="" id="txtSearch10" name="txtSearch10" title="txtSearch10" value="">
+
+           </div>
+           <a href="#" style="" role="button" class="popover-dismiss" data-toggle="popover" title="" data-content="(2021) 24 HKCFAR 116" data-original-title="Example"><i class="fa-solid fa-circle-info" style="font-size:1.7rem"></i></a>
+          </div>-->
+
+         </div>
+
+<!-- 202010 #database -->
+         <div class="col-lg-10 p-3" style="background:#ebdccb">
+
+		 <div class="form-group row">
+           <div class="col-sm-4 col-md-5 col-lg-3 col-form-label">
+            <p><b>Database(s):</b> </p>
+
+     <div id="selRemark" style="position: relative; 
+				float:left; margin-left:12px" class="mt-2">
+             <div class="form-check custom-control custom-checkbox" style="
+                    position: relative;width: auto;">
+
+			  <input type="checkbox" class="form-check-input" name="selall2" title="selall2" value="1" onclick="javascript:databaseselectall(this.form,this);getAppealfrm_db(this.form);" checked="">
+              <label class="form-check-label" for="exampleCheck1">select all</label>
+              <p class="smalltxt mt-1">CTRL + click to select multiple databases</p>		 
+					 
+            
+             </div>
+
+            </div>
+
+           </div>
+           <div class="col-sm-6 col-md-7 col-lg-6 pl-4 input-group">
+				 <select name="selDatabase2" size="4" multiple="" id="selDatabase2" title="selDatabase2" onchange="javascript:onchangedb(this.form,this.value);" class="form-select" aria-label="Select database" style="padding:0;width:auto;min-width:200px;float:left;height: fit-content;">
+             <option class="" value="JU" style="border-bottom:1px solid #999;padding:5px" selected="">Judgments</option>
+             <option class="" value="RV" style="border-bottom:1px solid #999;padding:5px" selected="">Reasons for Verdict</option>
+             <option class="" value="RS" style="border-bottom:1px solid #999;padding:5px" selected="">Reasons for Sentence</option>
+             <option class="" value="PD" style="border-bottom:1px solid #999;padding:5px" selected="">Practice Directions</option>
+            </select>
+     
+
+           </div>
+          </div>
+		 
+		 
+         <!-- <div class="form-group row">
+           <div class="col-sm-4 col-md-5 col-lg-3 col-form-label" style="text-align:left">
+            <p><b>
+              <span style="float:left;position: initial;display:flex">Database(s):</span></b></p>
+
+            <div id="selRemark" style="position: relative; 
+				height: 82px;
+				float:left; margin-left:12px">
+             <div class="form-check" style="
+                    position: relative;
+                    width: auto;
+                    height: 30px;
+					text-align:left
+                     ">
+
+              <input type="checkbox" class="form-check-input" name="selall2" title="selall2" value="1" onclick="javascript:databaseselectall(this.form,this);getAppealfrm_db(this.form);"  checked >
+              <label class="form-check-label" for="exampleCheck1">select all</label>
+              <p class="smalltxt mt-1">CTRL + click to select multiple databases</p>
+             </div>
+
+            </div>
+
+           </div>
+           <div class="col-sm-6 col-md-7 col-lg-6 input-group-sm">
+
+            <select name="selDatabase2" size="4" multiple="" id="selDatabase2" title="selDatabase2" onchange="javascript:onchangedb(this.form,this.value);" class="form-select" multiple aria-label="Select database" style="padding:0;width:auto;min-width:200px;float:left">
+             <option class="" value="JU" style="border-bottom:1px solid #999;padding:5px" selected>Judgments</option>
+             <option class="" value="RV" style="border-bottom:1px solid #999;padding:5px" selected>Reasons for Verdict</option>
+             <option class="" value="RS" style="border-bottom:1px solid #999;padding:5px" selected>Reasons for Sentence</option>
+             <option class="" value="PD" style="border-bottom:1px solid #999;padding:5px" selected>Practice Directions</option>
+            </select>
+
+           </div>
+          </div>-->
+
+         </div>
+
+        </div>
+       </div>
+
+      </div>
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	  
+
+
+
+
+
+<div class="tab-pane fade show active" id="tab1">
+
+       <div class="container-fluid">
+        <div class="row p-2 justify-content-between" style="">
+         <div class="col-md-5">
+          <div style="float:left"><span style="color:red"><b>Result:</b></span><span id="searchresult-total"><!--1-2 out of--> 13</span>&nbsp; found</div>
+          <div style="float:left" class="ml-4">Total Pages: <span id="searchresult-totalpages">2</span></div>
+         </div>
+         <div class="col-md-7" style="text-align:center">
+          <!--select name="order" title="Sort" onchange="javascript:gosortNew(this.value)" class="smalltxt">-->
+          <select name="order" title="Sort" onchange="javascript:gosort(this.value)" class="smalltxt m-1" style="border:1px solid #333; padding: 5px; border-radius: 8px;font-weight: 400; cursor: pointer">
+          		<option value="1" selected="">Sort by Relevance</option>
+                <option value="0">Sort by Date</option>
+                <option value="2">Sort by Title</option>
+          </select>
+          <select name="SHC" title="Search History" onchange="goSH(this.value)" class="smalltxt" style="border:1px solid #333; padding: 5px; border-radius: 8px;font-weight: 400; cursor: pointer">
+          		<option value="">---- View search history ----</option>
+                <option value="isadvsearch=1&amp;txtselectopt=1&amp;txtSearch=&amp;txtselectopt1=2&amp;txtSearch1=&amp;txtselectopt2=3&amp;txtSearch2=&amp;stem=1&amp;txtselectopt3=5&amp;txtSearch3=11%2F3%2F1998&amp;day1=11&amp;month=3&amp;year=1998&amp;txtselectopt4=6&amp;txtSearch4=&amp;txtselectopt5=7&amp;txtSearch5=&amp;txtselectopt6=8&amp;txtSearch6=&amp;txtselectopt7=9&amp;txtSearch7=&amp;selallct=1&amp;selSchct=FA&amp;selSchct=CA&amp;selSchct=HC&amp;selSchct=CT&amp;selSchct=DC&amp;selSchct=FC&amp;selSchct=LD&amp;selSchct=OT&amp;selcourtname=&amp;selcourtype=&amp;txtselectopt8=10&amp;txtSearch8=&amp;txtselectopt9=4&amp;txtSearch9=&amp;txtselectopt10=12&amp;txtSearch10=&amp;selall2=1&amp;selDatabase2=JU&amp;selDatabase2=RV&amp;selDatabase2=RS&amp;selDatabase2=PD&amp;order=1&amp;SHC=&amp;page=1"> | 11 3 1998</option>
+                <option value="CH">---- Clear history ----</option>
+          </select>
+         </div>
+         
+
+	
+                         
+
+
+	<script language="javascript" type="text/javascript">
+	function pagesubmit(pageno,frm0){         
+	        document.forms[0].page.value=pageno;        
+		document.forms[0].submit();
+		return
+	}
+	</script>
+	<input type="hidden" name="page" value="1">
+	
+	<div class="col-md-12 mt-2" style="overflow:auto"><ul class="pagination mb-0"><!--1 //pgstr[i] //ACTUAL PART--><li class="page-item active"><a class="page-link" aria-label="to page 1" href="javascript:void(0)">1</a></li><!--ACTUAL PART E--> <!--PART3--><li class="page-item"><a class="page-link" aria-label="to page 2" href="javascript:pagesubmit('2',this.form)">2</a></li><!--PART3 E--> </ul></div> 
+
+      
+        </div>
+
+
+
+        <div class="row">
+         <div class="col-lg-12 p-2">
+
+          <div class="bootstrap-table bootstrap4">
+      <div class="fixed-table-toolbar"></div>
+      
+      <div class="fixed-table-container" style="padding-bottom: 0px;">
+      <div class="fixed-table-header" style="display: none;"><table></table></div>
+      <div class="fixed-table-body">
+      <div class="fixed-table-loading table table-bordered table-hover" style="top: 0px;">
+      <span class="loading-wrap">
+      <span class="loading-text">Loading, please wait</span>
+      <span class="animation-wrap"><span class="animation-dot"></span></span>
+      </span>
+      </div>
+      <table id="table" data-show-header="false" data-toggle="table" data-smart-display="true" classes="['table-sm']" class="table table-bordered table-hover">
+           <thead style="display: none;"><tr><th style="vertical-align: top; width: 20px; " data-field="name"><div class="th-inner "><!-- # --></div><div class="fht-cell"></div></th><th style="" data-field="1"><div class="th-inner "></div><div class="fht-cell"></div></th><th style="" data-field="2"><div class="th-inner "></div><div class="fht-cell"></div></th></tr></thead>
+           <tbody><tr data-index="0"><td style="vertical-align: top; width: 20px; ">1.</td><td style=""><div class="container-fluid">
+
+
+<!-- ****************** -->
+<div class="row">
+<div class="col-md-6 pl-1">
+<!--lang caseNo  #2837 --><script type="text/javascript">var temp32205='DIS=32205&QS=%2B&TP=JU';</script><img src="/lrs/images/ThemeXP/Epage.gif" alt="Judgment in English">&nbsp;
+        
+           <b><a href="javascript:judpop1('search_result_detail_frame.jsp?'+temp32205);" class="searchfont result-caseno"><u>FACC1/1997</u></a>
+           
+    	   </b>&nbsp;&nbsp;
+    	   <a href="javascript:judpop('search_result_detail_frame.jsp?'+temp32205);" class="searchfont">
+    	   <img src="/lrs/images/new_win.gif" alt="Open it in new window browser" border="1"></a>
+    	   
+   
+</div>   
+<div class="col-md-4 pl-1">
+   <span style="color:#009900">Date</span>: 11/03/1998
+
+	</div>
+
+</div><!-- END row -->
+
+
+
+    <div class="row mt-1">
+        <div class="col-md-12 pl-1">
+    HKSAR v. TANG SIU MAN; <span class="reportage">Reported in: [1998] 1 HKLRD 350;(1997-1998) 1 HKCFAR 107</span>
+
+</div>
+</div><!-- END row -->
+
+<div class="row mt-1">
+<div class="col-md-6 pl-1"><span style="color:#009900">Database: </span>Judgments</div>
+
+
+<!--       &nbsp;&nbsp;&nbsp;&nbsp; -->
+      
+      &nbsp;<a href="https://legalref.judiciary.hk/lrs//common/ju/ju_frame.jsp?AH=S&amp;DIS=32205&amp;QS=%2B&amp;TP=JU" target="_top" class="default"><u>Appeal History</u></a>
+</div><!-- END row -->
+</div><!-- END container --></td><td style=""></td></tr><tr data-index="1"><td style="vertical-align: top; width: 20px; ">2.</td><td style=""><div class="container-fluid">
+
+
+<!-- ****************** -->
+<div class="row">
+<div class="col-md-6 pl-1">
+<!--lang caseNo  #2837 --><script type="text/javascript">var temp3466='DIS=3466&QS=%2B&TP=JU';</script><img src="/lrs/images/ThemeXP/Cpage.gif" alt="Judgment in Traditional Chinese">&nbsp;
+        
+           <b><a href="javascript:judpop1('search_result_detail_frame.jsp?'+temp3466);" class="searchfont result-caseno"><u>CACC359/1997</u></a>
+           
+    	   </b>&nbsp;&nbsp;
+    	   <a href="javascript:judpop('search_result_detail_frame.jsp?'+temp3466);" class="searchfont">
+    	   <img src="/lrs/images/new_win.gif" alt="Open it in new window browser" border="1"></a>
+    	   
+   
+</div>   
+<div class="col-md-4 pl-1">
+   <span style="color:#009900">Date</span>: 11/03/1998
+
+	</div>
+
+</div><!-- END row -->
+
+
+
+    <div class="row mt-1">
+        <div class="col-md-12 pl-1">
+    香港特別行政區 訴 王文傑及另一人
+
+</div>
+</div><!-- END row -->
+
+<div class="row mt-1">
+<div class="col-md-6 pl-1"><span style="color:#009900">Database: </span>Judgments</div>
+
+
+<!--       &nbsp;&nbsp;&nbsp;&nbsp; -->
+      
+      
+</div><!-- END row -->
+</div><!-- END container --></td><td style=""></td></tr><tr data-index="2"><td style="vertical-align: top; width: 20px; ">3.</td><td style=""><div class="container-fluid">
+
+
+<!-- ****************** -->
+<div class="row">
+<div class="col-md-6 pl-1">
+<!--lang caseNo  #2837 --><script type="text/javascript">var temp6013='DIS=6013&QS=%2B&TP=JU';</script><img src="/lrs/images/ThemeXP/Epage.gif" alt="Judgment in English">&nbsp;
+        
+           <b><a href="javascript:judpop1('search_result_detail_frame.jsp?'+temp6013);" class="searchfont result-caseno"><u>CACC616/1997</u></a>
+           
+    	   </b>&nbsp;&nbsp;
+    	   <a href="javascript:judpop('search_result_detail_frame.jsp?'+temp6013);" class="searchfont">
+    	   <img src="/lrs/images/new_win.gif" alt="Open it in new window browser" border="1"></a>
+    	   
+   
+</div>   
+<div class="col-md-4 pl-1">
+   <span style="color:#009900">Date</span>: 11/03/1998
+
+	</div>
+
+</div><!-- END row -->
+
+
+
+    <div class="row mt-1">
+        <div class="col-md-12 pl-1">
+    HKSAR v. CHAN KAM MING
+
+</div>
+</div><!-- END row -->
+
+<div class="row mt-1">
+<div class="col-md-6 pl-1"><span style="color:#009900">Database: </span>Judgments</div>
+
+
+<!--       &nbsp;&nbsp;&nbsp;&nbsp; -->
+      
+      
+</div><!-- END row -->
+</div><!-- END container --></td><td style=""></td></tr><tr data-index="3"><td style="vertical-align: top; width: 20px; ">4.</td><td style=""><div class="container-fluid">
+
+
+<!-- ****************** -->
+<div class="row">
+<div class="col-md-6 pl-1">
+<!--lang caseNo  #2837 --><script type="text/javascript">var temp6301='DIS=6301&QS=%2B&TP=JU';</script><img src="/lrs/images/ThemeXP/CTpage.gif" alt="Judgment in Traditional Chinese with translation in English">&nbsp;
+        
+           <b><a href="javascript:judpop1('search_result_detail_frame.jsp?'+temp6301);" class="searchfont result-caseno"><u>CACC652/1997</u></a>
+           
+    	   </b>&nbsp;&nbsp;
+    	   <a href="javascript:judpop('search_result_detail_frame.jsp?'+temp6301);" class="searchfont">
+    	   <img src="/lrs/images/new_win.gif" alt="Open it in new window browser" border="1"></a>
+    	   
+   
+</div>   
+<div class="col-md-4 pl-1">
+   <span style="color:#009900">Date</span>: 11/03/1998
+
+	</div>
+
+</div><!-- END row -->
+
+
+
+    <div class="row mt-1">
+        <div class="col-md-12 pl-1">
+    HKSAR v. WONG LO TAK
+
+</div>
+</div><!-- END row -->
+
+<div class="row mt-1">
+<div class="col-md-6 pl-1"><span style="color:#009900">Database: </span>Judgments</div>
+
+
+<!--       &nbsp;&nbsp;&nbsp;&nbsp; -->
+      
+      
+</div><!-- END row -->
+</div><!-- END container --></td><td style=""></td></tr><tr data-index="4"><td style="vertical-align: top; width: 20px; ">5.</td><td style=""><div class="container-fluid">
+
+
+<!-- ****************** -->
+<div class="row">
+<div class="col-md-6 pl-1">
+<!--lang caseNo  #2837 --><script type="text/javascript">var temp6300='DIS=6300&QS=%2B&TP=JU';</script><img src="/lrs/images/ThemeXP/CTpage.gif" alt="Judgment in Traditional Chinese with translation in English">&nbsp;
+        
+           <b><a href="javascript:judpop1('search_result_detail_frame.jsp?'+temp6300);" class="searchfont result-caseno"><u>CACC652/1997</u></a>
+           
+    	   </b>&nbsp;&nbsp;
+    	   <a href="javascript:judpop('search_result_detail_frame.jsp?'+temp6300);" class="searchfont">
+    	   <img src="/lrs/images/new_win.gif" alt="Open it in new window browser" border="1"></a>
+    	   
+   
+</div>   
+<div class="col-md-4 pl-1">
+   <span style="color:#009900">Date</span>: 11/03/1998
+
+	</div>
+
+</div><!-- END row -->
+
+
+
+    <div class="row mt-1">
+        <div class="col-md-12 pl-1">
+    香港特別行政區 訴 黃路德; <span class="reportage">Reported in: [1998] 2 HKLRD 527</span>
+
+</div>
+</div><!-- END row -->
+
+<div class="row mt-1">
+<div class="col-md-6 pl-1"><span style="color:#009900">Database: </span>Judgments</div>
+
+
+<!--       &nbsp;&nbsp;&nbsp;&nbsp; -->
+      
+      
+</div><!-- END row -->
+</div><!-- END container --></td><td style=""></td></tr><tr data-index="5"><td style="vertical-align: top; width: 20px; ">6.</td><td style=""><div class="container-fluid">
+
+
+<!-- ****************** -->
+<div class="row">
+<div class="col-md-6 pl-1">
+<!--lang caseNo  #2837 --><script type="text/javascript">var temp6624='DIS=6624&QS=%2B&TP=JU';</script><img src="/lrs/images/ThemeXP/Epage.gif" alt="Judgment in English">&nbsp;
+        
+           <b><a href="javascript:judpop1('search_result_detail_frame.jsp?'+temp6624);" class="searchfont result-caseno"><u>CACC700/1997</u></a>
+           
+    	   </b>&nbsp;&nbsp;
+    	   <a href="javascript:judpop('search_result_detail_frame.jsp?'+temp6624);" class="searchfont">
+    	   <img src="/lrs/images/new_win.gif" alt="Open it in new window browser" border="1"></a>
+    	   
+   
+</div>   
+<div class="col-md-4 pl-1">
+   <span style="color:#009900">Date</span>: 11/03/1998
+
+	</div>
+
+</div><!-- END row -->
+
+
+
+    <div class="row mt-1">
+        <div class="col-md-12 pl-1">
+    HKSAR v. LAM WAH MUN
+
+</div>
+</div><!-- END row -->
+
+<div class="row mt-1">
+<div class="col-md-6 pl-1"><span style="color:#009900">Database: </span>Judgments</div>
+
+
+<!--       &nbsp;&nbsp;&nbsp;&nbsp; -->
+      
+      
+</div><!-- END row -->
+</div><!-- END container --></td><td style=""></td></tr><tr data-index="6"><td style="vertical-align: top; width: 20px; ">7.</td><td style=""><div class="container-fluid">
+
+
+<!-- ****************** -->
+<div class="row">
+<div class="col-md-6 pl-1">
+<!--lang caseNo  #2837 --><script type="text/javascript">var temp6631='DIS=6631&QS=%2B&TP=JU';</script><img src="/lrs/images/ThemeXP/Epage.gif" alt="Judgment in English">&nbsp;
+        
+           <b><a href="javascript:judpop1('search_result_detail_frame.jsp?'+temp6631);" class="searchfont result-caseno"><u>CACC701/1997</u></a>
+           
+    	   </b>&nbsp;&nbsp;
+    	   <a href="javascript:judpop('search_result_detail_frame.jsp?'+temp6631);" class="searchfont">
+    	   <img src="/lrs/images/new_win.gif" alt="Open it in new window browser" border="1"></a>
+    	   
+   
+</div>   
+<div class="col-md-4 pl-1">
+   <span style="color:#009900">Date</span>: 11/03/1998
+
+	</div>
+
+</div><!-- END row -->
+
+
+
+    <div class="row mt-1">
+        <div class="col-md-12 pl-1">
+    HKSAR v. LAM WAH MUN
+
+</div>
+</div><!-- END row -->
+
+<div class="row mt-1">
+<div class="col-md-6 pl-1"><span style="color:#009900">Database: </span>Judgments</div>
+
+
+<!--       &nbsp;&nbsp;&nbsp;&nbsp; -->
+      
+      
+</div><!-- END row -->
+</div><!-- END container --></td><td style=""></td></tr><tr data-index="7"><td style="vertical-align: top; width: 20px; ">8.</td><td style=""><div class="container-fluid">
+
+
+<!-- ****************** -->
+<div class="row">
+<div class="col-md-6 pl-1">
+<!--lang caseNo  #2837 --><script type="text/javascript">var temp8834='DIS=8834&QS=%2B&TP=JU';</script><img src="/lrs/images/ThemeXP/Epage.gif" alt="Judgment in English">&nbsp;
+        
+           <b><a href="javascript:judpop1('search_result_detail_frame.jsp?'+temp8834);" class="searchfont result-caseno"><u>CACV14/1998</u></a>
+           
+    	   </b>&nbsp;&nbsp;
+    	   <a href="javascript:judpop('search_result_detail_frame.jsp?'+temp8834);" class="searchfont">
+    	   <img src="/lrs/images/new_win.gif" alt="Open it in new window browser" border="1"></a>
+    	   
+   
+</div>   
+<div class="col-md-4 pl-1">
+   <span style="color:#009900">Date</span>: 11/03/1998
+
+	</div>
+
+</div><!-- END row -->
+
+
+
+    <div class="row mt-1">
+        <div class="col-md-12 pl-1">
+    CHRISTIAN ANTHONY BULLEN v. TAM YEE NI; <span class="reportage">Reported in: [1998] 1 HKLRD 552</span>
+
+</div>
+</div><!-- END row -->
+
+<div class="row mt-1">
+<div class="col-md-6 pl-1"><span style="color:#009900">Database: </span>Judgments</div>
+
+
+<!--       &nbsp;&nbsp;&nbsp;&nbsp; -->
+      
+      
+</div><!-- END row -->
+</div><!-- END container --></td><td style=""></td></tr><tr data-index="8"><td style="vertical-align: top; width: 20px; ">9.</td><td style=""><div class="container-fluid">
+
+
+<!-- ****************** -->
+<div class="row">
+<div class="col-md-6 pl-1">
+<!--lang caseNo  #2837 --><script type="text/javascript">var temp11105='DIS=11105&QS=%2B&TP=JU';</script><img src="/lrs/images/ThemeXP/Epage.gif" alt="Judgment in English">&nbsp;
+        
+           <b><a href="javascript:judpop1('search_result_detail_frame.jsp?'+temp11105);" class="searchfont result-caseno"><u>CACV246/1997</u></a>
+           
+    	   </b>&nbsp;&nbsp;
+    	   <a href="javascript:judpop('search_result_detail_frame.jsp?'+temp11105);" class="searchfont">
+    	   <img src="/lrs/images/new_win.gif" alt="Open it in new window browser" border="1"></a>
+    	   
+   
+</div>   
+<div class="col-md-4 pl-1">
+   <span style="color:#009900">Date</span>: 11/03/1998
+
+	</div>
+
+</div><!-- END row -->
+
+
+
+    <div class="row mt-1">
+        <div class="col-md-12 pl-1">
+    FITZCHEUNG NICHOLAS v. FITZCHEUNG TSE SIU CHUNG
+
+</div>
+</div><!-- END row -->
+
+<div class="row mt-1">
+<div class="col-md-6 pl-1"><span style="color:#009900">Database: </span>Judgments</div>
+
+
+<!--       &nbsp;&nbsp;&nbsp;&nbsp; -->
+      
+      
+</div><!-- END row -->
+</div><!-- END container --></td><td style=""></td></tr><tr data-index="9"><td style="vertical-align: top; width: 20px; ">10.</td><td style=""><div class="container-fluid">
+
+
+<!-- ****************** -->
+<div class="row">
+<div class="col-md-6 pl-1">
+<!--lang caseNo  #2837 --><script type="text/javascript">var temp32020='DIS=32020&QS=%2B&TP=JU';</script><img src="/lrs/images/ThemeXP/Epage.gif" alt="Judgment in English">&nbsp;
+        
+           <b><a href="javascript:judpop1('search_result_detail_frame.jsp?'+temp32020);" class="searchfont result-caseno"><u>HCA3727/1997</u></a>
+           
+    	   </b>&nbsp;&nbsp;
+    	   <a href="javascript:judpop('search_result_detail_frame.jsp?'+temp32020);" class="searchfont">
+    	   <img src="/lrs/images/new_win.gif" alt="Open it in new window browser" border="1"></a>
+    	   
+   
+</div>   
+<div class="col-md-4 pl-1">
+   <span style="color:#009900">Date</span>: 11/03/1998
+
+	</div>
+
+</div><!-- END row -->
+
+
+
+    <div class="row mt-1">
+        <div class="col-md-12 pl-1">
+    ANEX ELECTRICAL CO LTD v. KINGSLAND INTERNATIONAL LTD AND ANOTHER; <span class="reportage">Reported in: [1998] 1 HKLRD 947</span>
+
+</div>
+</div><!-- END row -->
+
+<div class="row mt-1">
+<div class="col-md-6 pl-1"><span style="color:#009900">Database: </span>Judgments</div>
+
+
+<!--       &nbsp;&nbsp;&nbsp;&nbsp; -->
+      
+      
+</div><!-- END row -->
+</div><!-- END container --></td><td style=""></td></tr></tbody>
+							<tfoot style="display: none;"><tr></tr></tfoot></table></div>
+      <div class="fixed-table-footer"><table><thead><tr></tr></thead></table></div>
+      </div>
+      <div class="fixed-table-pagination" style="display: none;"></div>
+      </div><div class="clearfix"></div>
+		  
+		  		</div> <!-- column -->
+         </div> <!-- row -->	
+
+	<div class="row">
+		   <div class="col-md-12 mt-1 mb-2">
+                                                                
+
+                          
+<!-- END  -->
+                       <div class="col-md-12 mt-2" style="overflow:auto"><ul class="pagination mb-0"><!--1 //pgstr[i] //ACTUAL PART--><li class="page-item active"><a class="page-link" aria-label="to page 1" href="javascript:void(0)">1</a></li><!--ACTUAL PART E--> <!--PART3--><li class="page-item"><a class="page-link" aria-label="to page 2" href="javascript:pagesubmit('2',this.form)">2</a></li><!--PART3 E--> </ul></div>
+
+					   
+					   
+                    </div>
+               </div>
+
+                      
+       
+                    
+
+
+    </div> <!-- container -->
+    </div> <!--tag 1 End -->
+</div> <!-- tab-content -->
+
+  </div> <!-- col-lg-12 -->
+  </div> <!-- row -->
+
+
+ <div id="printwai" class="row">
+		   <div class="col-md-12 m-2">
+			<a href="https://www.w3.org/WAI/WCAG2AA-Conformance"><img src="../../images/wcag2AA.gif" alt="遵守2A級無障礙圖示，萬維網聯盟（W3C）- 無障礙網頁倡議（WAI） Web Content Accessibility Guidelines 2.0"></a>
+			</div>
+</div>
+</form> 
+</div> <!-- page-content -->
+  
+<!-- <BR><BR> -->
+<script>
+//20211018 SHOW & HIDE 
+function showField(id, text, btn) {
+	//alert (id);
+	//alert (text);
+	document.getElementById("hsf").value=id;
+	document.getElementById(id).style.display = 'block';
+    document.getElementById(text).style.display = 'none';
+    btn.style.display = 'none';
+}
+</script>
+
+
+
+
+
+
+<script type="text/javascript">
+<!--
+function change_lang(lan){
+	document.org_value.changed_lan.value=lan;
+	document.org_value.submit();
+}
+//-->
+</script>
+<form method="post" name="org_value" action="">
+<input type="hidden" name="changed_lan" value=""><input type="hidden" name="isadvsearch" value="1"><input type="hidden" name="txtselectopt" value="1"><input type="hidden" name="txtSearch" value=""><input type="hidden" name="txtselectopt1" value="2"><input type="hidden" name="txtSearch1" value=""><input type="hidden" name="txtselectopt2" value="3"><input type="hidden" name="txtSearch2" value=""><input type="hidden" name="stem" value="1"><input type="hidden" name="txtselectopt3" value="5"><input type="hidden" name="txtSearch3" value="11/3/1998"><input type="hidden" name="day1" value="11"><input type="hidden" name="month" value="3"><input type="hidden" name="year" value="1998"><input type="hidden" name="txtselectopt4" value="6"><input type="hidden" name="txtSearch4" value=""><input type="hidden" name="txtselectopt5" value="7"><input type="hidden" name="txtSearch5" value=""><input type="hidden" name="txtselectopt6" value="8"><input type="hidden" name="txtSearch6" value=""><input type="hidden" name="txtselectopt7" value="9"><input type="hidden" name="txtSearch7" value=""><input type="hidden" name="selallct" value="1"><input type="hidden" name="selSchct" value="FA"><input type="hidden" name="selSchct" value="CA"><input type="hidden" name="selSchct" value="HC"><input type="hidden" name="selSchct" value="CT"><input type="hidden" name="selSchct" value="DC"><input type="hidden" name="selSchct" value="FC"><input type="hidden" name="selSchct" value="LD"><input type="hidden" name="selSchct" value="OT"><input type="hidden" name="selcourtname" value=""><input type="hidden" name="selcourtype" value=""><input type="hidden" name="txtselectopt8" value="10"><input type="hidden" name="txtSearch8" value=""><input type="hidden" name="txtselectopt9" value="4"><input type="hidden" name="txtSearch9" value=""><input type="hidden" name="txtselectopt10" value="12"><input type="hidden" name="txtSearch10" value=""><input type="hidden" name="selall2" value="1"><input type="hidden" name="selDatabase2" value="JU"><input type="hidden" name="selDatabase2" value="RV"><input type="hidden" name="selDatabase2" value="RS"><input type="hidden" name="selDatabase2" value="PD"><input type="hidden" name="order" value="1"><input type="hidden" name="SHC" value=""><input type="hidden" name="page" value="1">
+<input style="visibility:hidden;" type="submit" value="">
+</form>
+
+
+
+ <!-- End demo content -->
+
+ <script src="/lrs/javascript/jquery-3.7.0.min.js"></script>
+ <script src="/lrs/javascript/bootstrap.bundle.min.js"></script>
+ <script src="/lrs/javascript/bootstrap-table.min.js"></script>
+ <script src="/lrs/javascript/js.cookie.min.js"></script>
+ <script src="/lrs/javascript/scripts.js"></script>
+ 
+ 
+ <!--script src="https://legalref.judiciary.hk/lrs/javascript/mod_common.js"></script>
+ <script src="https://legalref.judiciary.hk/lrs/javascript/mod_form.js"></script>-->
+
+ <script>
+ // Start: tempoarly to override the existing for demo 
+function SetCookieTmp (name, value) { 
+	var argv = name
+	var argc = 1;
+	var expires = (2 < argc) ? argv[2] : null; 
+	//var path = (3 < argc) ? argv[3] : null; 
+	//alert(argv[3]);
+	//var path = (3 < argc) ? null : null; 
+	var path = "/";
+	var domain = (4 < argc) ? argv[4] : null; 
+	var secure = (5 < argc) ? argv[5] : false; 
+	document.cookie = name + "=" + escape (value) + 
+	((expires == null) ? "" : ("; expires=" + expires.toGMTString())) + 
+	((path == null) ? "" : ("; path=" + path)) + 
+	((domain == null) ? "" : ("; domain=" + domain))
+	
+	
+} 
+SetCookieTmp ('curl', window.location.href);
+console.log(GetCookie('curl'))
+// End: tempoarly to override the existing for demo
+
+
+  $(document).ready(function() {
+   
+  
+  	  
+  	   var $table = $('#table')
+  	   
+  	    //$table.on('load-success.bs.table', function(data) {
+  		//console.log('change initial view to toggle')
+  
+     // Initial view switch based on window width
+  		if ($(window).width() < 600) {
+  			console.log('change initial view to toggle')
+  			$table.bootstrapTable('toggleView', 'cardView');
+  		} else {
+  			if ($table.find('.card-view').length) {
+  				$table.bootstrapTable('toggleView', false);
+  			}
+  		}
+  		
+    
+    $(window).resize(function() {
+      
+  
+      if ($(window).width() < 600) {
+  		
+  		 if (!$table.find('.card-view').length) {
+  			 $table.bootstrapTable('toggleView', 'cardView');
+  		}
+  
+  		
+       
+      } else {
+  			 if ($table.find('.card-view').length) {
+  				$table.bootstrapTable('toggleView', false);
+  			}
+      }
+    });
+  		
+  		
+   $('#caseTypeListModal').on('show.bs.modal', function (e) {
+  
+  
+  var modal = $(this);
+  
+  // load content from HTML string
+  //modal.find('.modal-body').html("Nice modal body baby...");
+  
+  // or, load content from value of data-remote url
+  modal.find('.modal-body').load("/en/help/helpsearch.html#basic");
+  
+  });
+  
+  	  
+  });
+  
+     $(function() {
+  
+    $('.popover-dismiss').popover({
+   
+  		trigger: 'hover'
+    
+  })
+     })
+  
+  
+ </script>
+
+
+
+<script type="text/javascript">
+<!--
+function change_lang(lan){
+	document.org_value.changed_lan.value=lan;
+	document.org_value.submit();
+}
+//-->
+</script>
+<form method="post" name="org_value" action="">
+<input type="hidden" name="changed_lan" value=""><input type="hidden" name="isadvsearch" value="1"><input type="hidden" name="txtselectopt" value="1"><input type="hidden" name="txtSearch" value=""><input type="hidden" name="txtselectopt1" value="2"><input type="hidden" name="txtSearch1" value=""><input type="hidden" name="txtselectopt2" value="3"><input type="hidden" name="txtSearch2" value=""><input type="hidden" name="stem" value="1"><input type="hidden" name="txtselectopt3" value="5"><input type="hidden" name="txtSearch3" value="11/3/1998"><input type="hidden" name="day1" value="11"><input type="hidden" name="month" value="3"><input type="hidden" name="year" value="1998"><input type="hidden" name="txtselectopt4" value="6"><input type="hidden" name="txtSearch4" value=""><input type="hidden" name="txtselectopt5" value="7"><input type="hidden" name="txtSearch5" value=""><input type="hidden" name="txtselectopt6" value="8"><input type="hidden" name="txtSearch6" value=""><input type="hidden" name="txtselectopt7" value="9"><input type="hidden" name="txtSearch7" value=""><input type="hidden" name="selallct" value="1"><input type="hidden" name="selSchct" value="FA"><input type="hidden" name="selSchct" value="CA"><input type="hidden" name="selSchct" value="HC"><input type="hidden" name="selSchct" value="CT"><input type="hidden" name="selSchct" value="DC"><input type="hidden" name="selSchct" value="FC"><input type="hidden" name="selSchct" value="LD"><input type="hidden" name="selSchct" value="OT"><input type="hidden" name="selcourtname" value=""><input type="hidden" name="selcourtype" value=""><input type="hidden" name="txtselectopt8" value="10"><input type="hidden" name="txtSearch8" value=""><input type="hidden" name="txtselectopt9" value="4"><input type="hidden" name="txtSearch9" value=""><input type="hidden" name="txtselectopt10" value="12"><input type="hidden" name="txtSearch10" value=""><input type="hidden" name="selall2" value="1"><input type="hidden" name="selDatabase2" value="JU"><input type="hidden" name="selDatabase2" value="RV"><input type="hidden" name="selDatabase2" value="RS"><input type="hidden" name="selDatabase2" value="PD"><input type="hidden" name="order" value="1"><input type="hidden" name="SHC" value=""><input type="hidden" name="page" value="1">
+<input style="visibility:hidden;" type="submit" value="">
+</form>
+
+
+
+
+ 
+
+</body></html>
