@@ -229,7 +229,143 @@ For production deployment on a VM:
 4. Set up systemd service for reliability
 5. Configure cron for scheduled runs
 
-Example systemd service:
+### Step-by-Step Setup
+
+#### 1. Prepare the Server
+
+```bash
+# Update system packages
+sudo apt update && sudo apt upgrade -y
+
+# Install Python 3.11+ and required system dependencies
+sudo apt install -y python3.11 python3.11-venv python3-pip git
+
+# Install Playwright system dependencies
+sudo apt install -y libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 \
+    libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 \
+    libxfixes3 libxrandr2 libgbm1 libasound2 libpango-1.0-0 \
+    libcairo2 libatspi2.0-0
+
+# Create a dedicated user for the scraper
+sudo useradd -r -m -s /bin/bash scraper
+```
+
+#### 2. Deploy the Application
+
+```bash
+# Create application directory
+sudo mkdir -p /opt/legal-ai
+sudo chown scraper:scraper /opt/legal-ai
+
+# Switch to scraper user
+sudo -u scraper -i
+
+# Clone the repository
+cd /opt/legal-ai
+git clone https://github.com/your-org/Legal-AI.git .
+
+# Create and activate virtual environment
+cd batch
+python3.11 -m venv .venv
+source .venv/bin/activate
+
+# Install Python dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# Install Playwright browsers
+playwright install chromium
+```
+
+#### 3. Configure Environment
+
+```bash
+# Copy and edit the environment file (in repo root)
+cp /opt/legal-ai/.env.example /opt/legal-ai/.env
+nano /opt/legal-ai/.env
+
+# Set appropriate permissions
+chmod 600 /opt/legal-ai/.env
+```
+
+#### 4. Create Log Directory
+
+```bash
+sudo mkdir -p /var/log/legal-ai
+sudo chown scraper:scraper /var/log/legal-ai
+```
+
+#### 5. Install systemd Services
+
+```bash
+# Create the Judiciary scraper service
+sudo tee /etc/systemd/system/legal-ai-judiciary.service << 'EOF'
+[Unit]
+Description=Legal AI Judiciary Scraper
+After=network.target
+
+[Service]
+Type=simple
+User=scraper
+WorkingDirectory=/opt/legal-ai/batch
+ExecStart=/opt/legal-ai/batch/.venv/bin/python -m jobs.run_judiciary --resume
+Restart=on-failure
+RestartSec=60
+StandardOutput=append:/var/log/legal-ai/judiciary.log
+StandardError=append:/var/log/legal-ai/judiciary.log
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Create the eLegislation scraper service
+sudo tee /etc/systemd/system/legal-ai-elegislation.service << 'EOF'
+[Unit]
+Description=Legal AI eLegislation Scraper
+After=network.target
+
+[Service]
+Type=simple
+User=scraper
+WorkingDirectory=/opt/legal-ai/batch
+ExecStart=/opt/legal-ai/batch/.venv/bin/python -m jobs.run_elegislation --resume
+Restart=on-failure
+RestartSec=60
+StandardOutput=append:/var/log/legal-ai/elegislation.log
+StandardError=append:/var/log/legal-ai/elegislation.log
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Reload systemd and enable services
+sudo systemctl daemon-reload
+sudo systemctl enable legal-ai-judiciary.service
+sudo systemctl enable legal-ai-elegislation.service
+```
+
+#### 6. Manage the Services
+
+```bash
+# Start a scraper
+sudo systemctl start legal-ai-judiciary
+
+# Check status
+sudo systemctl status legal-ai-judiciary
+
+# View logs
+sudo journalctl -u legal-ai-judiciary -f
+# Or view the log file directly
+tail -f /var/log/legal-ai/judiciary.log
+
+# Stop a scraper
+sudo systemctl stop legal-ai-judiciary
+
+# Restart after code updates
+sudo systemctl restart legal-ai-judiciary
+```
+
+### Example systemd Service File
 
 ```ini
 [Unit]
