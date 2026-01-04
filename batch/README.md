@@ -186,16 +186,17 @@ python -m jobs.ingest_jsonl --source elegislation --all
 
 **Database Tables:**
 
-| Table | Description |
-|-------|-------------|
-| `courts` | Hong Kong court hierarchy lookup |
-| `court_cases` | Court judgments with full text |
-| `legislation` | Legislation chapters |
-| `legislation_sections` | Individual sections within legislation |
-| `legislation_schedules` | Schedules attached to legislation |
-| `ingestion_jobs` | Tracks file ingestion for idempotency |
+  | Table | Description |
+  | ------- | ------------- |
+  | `courts` | Hong Kong court hierarchy lookup |
+  | `court_cases` | Court judgments with full text |
+  | `legislation` | Legislation chapters |
+  | `legislation_sections` | Individual sections within legislation |
+  | `legislation_schedules` | Schedules attached to legislation |
+  | `ingestion_jobs` | Tracks file ingestion for idempotency |
 
 The ingestion job:
+
 - Uses upsert (INSERT ... ON CONFLICT UPDATE) for idempotent re-runs
 - Tracks processed files to skip already-ingested data
 - Records success/failure counts per file
