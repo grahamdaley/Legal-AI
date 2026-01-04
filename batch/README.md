@@ -162,6 +162,44 @@ python -m jobs.run_elegislation --dry-run --limit 100
 }
 ```
 
+## Database Ingestion
+
+After scraping, ingest JSONL files into the Supabase database:
+
+```bash
+# Ingest a specific judiciary file
+python -m jobs.ingest_jsonl --source judiciary --file output/judiciary/cases_20260104.jsonl
+
+# Ingest a specific legislation file
+python -m jobs.ingest_jsonl --source elegislation --file output/elegislation/legislation_20260104.jsonl
+
+# Ingest all files for a source
+python -m jobs.ingest_jsonl --source judiciary --all
+python -m jobs.ingest_jsonl --source elegislation --all
+```
+
+**Options:**
+
+- `--source`: Data source type (`judiciary` or `elegislation`)
+- `--file`: Path to specific JSONL file to ingest
+- `--all`: Process all JSONL files in the source output directory
+
+**Database Tables:**
+
+| Table | Description |
+|-------|-------------|
+| `courts` | Hong Kong court hierarchy lookup |
+| `court_cases` | Court judgments with full text |
+| `legislation` | Legislation chapters |
+| `legislation_sections` | Individual sections within legislation |
+| `legislation_schedules` | Schedules attached to legislation |
+| `ingestion_jobs` | Tracks file ingestion for idempotency |
+
+The ingestion job:
+- Uses upsert (INSERT ... ON CONFLICT UPDATE) for idempotent re-runs
+- Tracks processed files to skip already-ingested data
+- Records success/failure counts per file
+
 ## State Management
 
 The scrapers maintain state files to support resuming interrupted scrapes:
@@ -214,7 +252,8 @@ batch/
 ├── jobs/
 │   ├── __init__.py
 │   ├── run_judiciary.py      # Judiciary job runner
-│   └── run_elegislation.py   # eLegislation job runner
+│   ├── run_elegislation.py   # eLegislation job runner
+│   └── ingest_jsonl.py       # Database ingestion job
 ├── requirements.txt
 └── README.md
 ```

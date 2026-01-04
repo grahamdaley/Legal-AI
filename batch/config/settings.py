@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_anon_key: str = ""
     supabase_service_key: str = ""
+    supabase_db_url: str = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+    
+    # Output directory for scraped data
+    output_dir: str = "./output"
 
     # OpenAI
     openai_api_key: str = ""
