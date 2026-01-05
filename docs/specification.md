@@ -52,38 +52,67 @@ This document specifies a legal research application enabling Hong Kong lawyers 
 
 ### 2.1 High-Level Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                              CLIENT APPLICATIONS                                 │
-├──────────────┬──────────────┬──────────────┬──────────────┬─────────────────────┤
-│   Web App    │  MS Word     │   Browser    │   Outlook    │   REST API          │
-│   (React)    │  Add-in      │   Extension  │   Plugin     │   Clients           │
-└──────┬───────┴──────┬───────┴──────┬───────┴──────┬───────┴──────────┬──────────┘
-       └──────────────┴──────────────┴──────┬───────┴──────────────────┘
-                                            │
-                                            ▼
-┌───────────────────────────────────────────────────────────────────────────────────┐
-│                              API GATEWAY (Supabase Edge Functions)                │
-└───────────────────────────────────────────┬───────────────────────────────────────┘
-                                            │
-              ┌─────────────────────────────┼─────────────────────────────┐
-              ▼                             ▼                             ▼
-┌─────────────────────────┐   ┌─────────────────────────┐   ┌─────────────────────────┐
-│      AI/ML SERVICES     │   │     CORE SERVICES       │   │    BACKGROUND JOBS      │
-├─────────────────────────┤   ├─────────────────────────┤   ├─────────────────────────┤
-│ • Query Understanding   │   │ • Search Orchestration  │   │ • Scraper Workers       │
-│ • Embedding Generation  │   │ • Citation Resolution   │   │ • Embedding Pipeline    │
-│ • Relevance Ranking     │   │ • User Management       │   │ • Index Maintenance     │
-│ • Summarization         │   │ • Export Generation     │   │ • Data Sync             │
-└───────────┬─────────────┘   └───────────┬─────────────┘   └───────────┬─────────────┘
-            └─────────────────────────────┼─────────────────────────────┘
-                                          ▼
-┌───────────────────────────────────────────────────────────────────────────────────┐
-│                              DATA LAYER (Supabase/PostgreSQL)                     │
-├─────────────────┬─────────────────┬─────────────────┬─────────────────────────────┤
-│   Cases DB      │   Legislation   │   Vector Store  │   User Data & Analytics     │
-│   (judgments)   │   DB            │   (pgvector)    │   (auth, searches, prefs)   │
-└─────────────────┴─────────────────┴─────────────────┴─────────────────────────────┘
+```mermaid
+flowchart TB
+  subgraph CLIENT[CLIENT APPLICATIONS]
+    direction LR
+    WebApp[Web App<br/>(React)]
+    Word[MS Word<br/>Add-in]
+    BrowserExt[Browser<br/>Extension]
+    Outlook[Outlook<br/>Plugin]
+    RestClients[REST API<br/>Clients]
+  end
+
+  APIGW[API GATEWAY<br/>(Supabase Edge Functions)]
+
+  subgraph SERVICES[SERVICES]
+    direction LR
+    subgraph AIML[AI/ML SERVICES]
+      direction TB
+      QU[Query Understanding]
+      EG[Embedding Generation]
+      RR[Relevance Ranking]
+      SUM[Summarization]
+    end
+
+    subgraph CORE[CORE SERVICES]
+      direction TB
+      SO[Search Orchestration]
+      CR[Citation Resolution]
+      UM[User Management]
+      EX[Export Generation]
+    end
+
+    subgraph BG[BACKGROUND JOBS]
+      direction TB
+      SW[Scraper Workers]
+      EP[Embedding Pipeline]
+      IM[Index Maintenance]
+      DS[Data Sync]
+    end
+  end
+
+  subgraph DATA[DATA LAYER<br/>(Supabase/PostgreSQL)]
+    direction LR
+    CasesDB[Cases DB<br/>(judgments)]
+    LegDB[Legislation<br/>DB]
+    VectorStore[Vector Store<br/>(pgvector)]
+    UserData[User Data & Analytics<br/>(auth, searches, prefs)]
+  end
+
+  WebApp --> APIGW
+  Word --> APIGW
+  BrowserExt --> APIGW
+  Outlook --> APIGW
+  RestClients --> APIGW
+
+  APIGW --> AIML
+  APIGW --> CORE
+  APIGW --> BG
+
+  AIML --> DATA
+  CORE --> DATA
+  BG --> DATA
 ```
 
 ### 2.2 Technology Stack
