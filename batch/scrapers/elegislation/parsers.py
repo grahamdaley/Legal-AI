@@ -121,6 +121,38 @@ def _extract_chapter_number(url: str, soup: BeautifulSoup) -> Optional[str]:
 
 def _extract_title(soup: BeautifulSoup, lang: str) -> Optional[str]:
     """Extract title in specified language."""
+    
+    # First, try the page <title> tag - most reliable for eLegislation
+    # Format: "Cap. 32 Companies (Winding Up and Miscellaneous Provisions) Ordinance"
+    title_tag = soup.find("title")
+    if title_tag and lang == "en":
+        title_text = title_tag.get_text(strip=True)
+        # Remove "Cap. X" prefix to get just the title
+        match = re.match(r"Cap\.\s*\d+[A-Z]?\s+(.+)", title_text)
+        if match:
+            title = match.group(1).strip()
+            # Check it's not a generic page title
+            if title and title not in ("View Legislation", "Back", "Home"):
+                return title
+        # If no cap prefix, check if it's a valid title
+        elif title_text and not re.search(r"[\u4e00-\u9fff]", title_text):
+            if title_text not in ("View Legislation", "Back", "Home", "eLegislation"):
+                return title_text
+    
+    # Try Chinese title from page title
+    if title_tag and lang == "zh":
+        title_text = title_tag.get_text(strip=True)
+        # Look for Chinese characters after the cap number
+        match = re.search(r"Cap\.\s*\d+[A-Z]?\s+[^《]*《(.+?)》", title_text)
+        if match:
+            return match.group(1).strip()
+        # Or just Chinese text
+        if re.search(r"[\u4e00-\u9fff]", title_text):
+            # Extract Chinese portion
+            zh_match = re.search(r"([\u4e00-\u9fff].+)", title_text)
+            if zh_match:
+                return zh_match.group(1).strip()
+    
     # Look for title elements with language indicators
     selectors = [
         f"[lang='{lang}'] .title",
@@ -132,15 +164,8 @@ def _extract_title(soup: BeautifulSoup, lang: str) -> Optional[str]:
     for selector in selectors:
         el = soup.select_one(selector)
         if el:
-            return el.get_text(strip=True)
-
-    # Fallback: look for any title
-    if lang == "en":
-        title_el = soup.find("h1")
-        if title_el:
-            text = title_el.get_text(strip=True)
-            # Check if it's English (no Chinese characters)
-            if not re.search(r"[\u4e00-\u9fff]", text):
+            text = el.get_text(strip=True)
+            if text and text not in ("View Legislation", "Back", "Home"):
                 return text
 
     return None
@@ -176,14 +201,67 @@ def _determine_type(url: str, soup: BeautifulSoup) -> str:
 
 def _extract_date(soup: BeautifulSoup, date_type: str) -> Optional[date]:
     """Extract a specific date from the legislation."""
-    patterns = {
-        "enactment": [r"enacted[:\s]+(\d{1,2}[/.-]\d{1,2}[/.-]\d{4})", r"enacted[:\s]+(\d{4})"],
-        "commencement": [r"commenced?[:\s]+(\d{1,2}[/.-]\d{1,2}[/.-]\d{4})"],
-        "version": [r"version[:\s]+(\d{1,2}[/.-]\d{1,2}[/.-]\d{4})", r"as at[:\s]+(\d{1,2}[/.-]\d{1,2}[/.-]\d{4})"],
+    
+    # First, try Dublin Core metadata elements (used by eLegislation)
+    if date_type == "version":
+        # Look for dc_date class element
+        dc_date_el = soup.find(class_="dc_date")
+        if dc_date_el:
+            date_str = dc_date_el.get_text(strip=True)
+            parsed = _parse_date_string(date_str)
+            if parsed:
+                return parsed
+    
+    # Try meta tags
+    meta_names = {
+        "enactment": ["dc.date.enacted", "enacted", "enactment-date"],
+        "commencement": ["dc.date.commenced", "commenced", "commencement-date"],
+        "version": ["dc.date", "dc_date", "version-date"],
+    }
+    
+    for meta_name in meta_names.get(date_type, []):
+        meta_el = soup.find("meta", attrs={"name": meta_name})
+        if meta_el and meta_el.get("content"):
+            parsed = _parse_date_string(meta_el["content"])
+            if parsed:
+                return parsed
+    
+    # Try elements with specific classes
+    class_patterns = {
+        "enactment": ["enactment-date", "enacted-date", "date-enacted"],
+        "commencement": ["commencement-date", "commenced-date", "date-commenced"],
+        "version": ["version-date", "dc_date", "as-at-date"],
+    }
+    
+    for class_name in class_patterns.get(date_type, []):
+        el = soup.find(class_=class_name)
+        if el:
+            date_str = el.get_text(strip=True)
+            parsed = _parse_date_string(date_str)
+            if parsed:
+                return parsed
+    
+    # Fallback: regex patterns in text
+    text_patterns = {
+        "enactment": [
+            r"enacted[:\s]+(\d{1,2}[/.-]\d{1,2}[/.-]\d{4})",
+            r"enacted[:\s]+(\d{4}[/.-]\d{1,2}[/.-]\d{1,2})",
+            r"enacted[:\s]+(\d{4})",
+        ],
+        "commencement": [
+            r"commenced?[:\s]+(\d{1,2}[/.-]\d{1,2}[/.-]\d{4})",
+            r"commenced?[:\s]+(\d{4}[/.-]\d{1,2}[/.-]\d{1,2})",
+            r"commencement[:\s]+(\d{1,2}[/.-]\d{1,2}[/.-]\d{4})",
+        ],
+        "version": [
+            r"version[:\s]+(\d{1,2}[/.-]\d{1,2}[/.-]\d{4})",
+            r"version[:\s]+(\d{4}[/.-]\d{1,2}[/.-]\d{1,2})",
+            r"as at[:\s]+(\d{1,2}[/.-]\d{1,2}[/.-]\d{4})",
+        ],
     }
 
     text = soup.get_text()
-    for pattern in patterns.get(date_type, []):
+    for pattern in text_patterns.get(date_type, []):
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
             date_str = match.group(1)
