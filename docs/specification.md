@@ -56,48 +56,48 @@ This document specifies a legal research application enabling Hong Kong lawyers 
 flowchart TB
   subgraph CLIENT[CLIENT APPLICATIONS]
     direction LR
-    WebApp[Web App<br/>(React)]
-    Word[MS Word<br/>Add-in]
-    BrowserExt[Browser<br/>Extension]
-    Outlook[Outlook<br/>Plugin]
-    RestClients[REST API<br/>Clients]
+    WebApp["Web App<br>(React)"];
+    Word["MS Word<br>Add-in"]; 
+    BrowserExt["Browser<br>Extension"]; 
+    Outlook["Outlook<br>Plugin"]; 
+    RestClients["REST API<br>Clients"]; 
   end
 
-  APIGW[API GATEWAY<br/>(Supabase Edge Functions)]
+  APIGW["API GATEWAY<br>(Supabase Edge Functions)"];
 
   subgraph SERVICES[SERVICES]
     direction LR
     subgraph AIML[AI/ML SERVICES]
       direction TB
-      QU[Query Understanding]
-      EG[Embedding Generation]
-      RR[Relevance Ranking]
-      SUM[Summarization]
+      QU["Query Understanding"];
+      EG["Embedding Generation"];
+      RR["Relevance Ranking"];
+      SUM["Summarization"];
     end
 
     subgraph CORE[CORE SERVICES]
       direction TB
-      SO[Search Orchestration]
-      CR[Citation Resolution]
-      UM[User Management]
-      EX[Export Generation]
+      SO["Search Orchestration"];
+      CR["Citation Resolution"];
+      UM["User Management"];
+      EX["Export Generation"];
     end
 
     subgraph BG[BACKGROUND JOBS]
       direction TB
-      SW[Scraper Workers]
-      EP[Embedding Pipeline]
-      IM[Index Maintenance]
-      DS[Data Sync]
+      SW["Scraper Workers"];
+      EP["Embedding Pipeline"];
+      IM["Index Maintenance"];
+      DS["Data Sync"];
     end
   end
 
-  subgraph DATA[DATA LAYER<br/>(Supabase/PostgreSQL)]
+  subgraph DATA["DATA LAYER<br>(Supabase/PostgreSQL)"]
     direction LR
-    CasesDB[Cases DB<br/>(judgments)]
-    LegDB[Legislation<br/>DB]
-    VectorStore[Vector Store<br/>(pgvector)]
-    UserData[User Data & Analytics<br/>(auth, searches, prefs)]
+    CasesDB["Cases DB<br>(judgments)"]; 
+    LegDB["Legislation<br>DB"]; 
+    VectorStore["Vector Store<br>(pgvector)"]; 
+    UserData["User Data & Analytics<br>(auth, searches, prefs)"]; 
   end
 
   WebApp --> APIGW
