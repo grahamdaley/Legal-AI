@@ -124,8 +124,9 @@ flowchart TB
 | **Database** | PostgreSQL 17 + pgvector | Vector search + relational |
 | **Authentication** | Supabase Auth | Built-in OAuth, SSO |
 | **File Storage** | Supabase Storage | PDF judgment storage |
-| **AI/Embeddings** | OpenAI API (text-embedding-3-large) | Best embeddings |
-| **LLM** | See Section 6.1 | Task-specific model selection |
+| **AI/ML Platform** | Amazon Bedrock | Unified access to multiple FMs, enterprise security |
+| **Embeddings** | Amazon Titan Text Embeddings V2 | Cost-effective, 8K context, 1024 dimensions |
+| **LLM** | See Section 6.1 | Task-specific model selection via Bedrock |
 | **Scraping** | Python + Playwright + Apify | JS rendering support |
 
 ---
@@ -296,7 +297,7 @@ CREATE TABLE case_embeddings (
     chunk_index INT NOT NULL,
     chunk_text TEXT NOT NULL,
     chunk_type VARCHAR(20) DEFAULT 'body',      -- 'headnote', 'body', 'ratio'
-    embedding vector(3072),                     -- text-embedding-3-large
+    embedding vector(1024),                     -- Amazon Titan Text Embeddings V2
     token_count INT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(case_id, chunk_index)
@@ -363,7 +364,7 @@ CREATE TABLE legislation_embeddings (
     section_id UUID NOT NULL REFERENCES legislation_sections(id) ON DELETE CASCADE,
     chunk_index INT NOT NULL,
     chunk_text TEXT NOT NULL,
-    embedding vector(3072),
+    embedding vector(1024),                     -- Amazon Titan Text Embeddings V2
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(section_id, chunk_index)
 );
@@ -386,7 +387,7 @@ CREATE TABLE user_searches (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES user_profiles(id) ON DELETE CASCADE,
     query_text TEXT NOT NULL,
-    query_embedding vector(3072),
+    query_embedding vector(1024),
     filters JSONB,
     results_count INT,
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -417,7 +418,7 @@ CREATE TABLE collection_items (
 
 ```sql
 CREATE OR REPLACE FUNCTION search_cases_semantic(
-    query_embedding vector(3072),
+    query_embedding vector(1024),
     match_threshold DECIMAL DEFAULT 0.7,
     match_count INT DEFAULT 20,
     filter_jurisdiction UUID DEFAULT NULL,
@@ -464,7 +465,7 @@ $$;
 ```sql
 CREATE OR REPLACE FUNCTION search_cases_hybrid(
     search_query TEXT,
-    query_embedding vector(3072),
+    query_embedding vector(1024),
     semantic_weight DECIMAL DEFAULT 0.7,
     match_count INT DEFAULT 20
 )
@@ -903,9 +904,14 @@ if __name__ == '__main__':
 
 ## 6. AI/ML Pipeline
 
-### 6.1 LLM Selection
+### 6.1 Amazon Bedrock Integration
 
-Rather than hardcoding specific model versions, select models based on these criteria and evaluate the **latest available versions** at implementation time.
+All AI/ML capabilities are accessed through **Amazon Bedrock**, providing:
+- Unified API access to multiple foundation models
+- Enterprise-grade security and compliance
+- Pay-per-use pricing with no upfront commitments
+- Regional availability (recommend Asia Pacific for HK data residency)
+- Batch inference at 50% discount for bulk processing
 
 #### Selection Criteria
 
@@ -917,78 +923,119 @@ Rather than hardcoding specific model versions, select models based on these cri
 | **Cost** | Balance quality vs. volume requirements |
 | **Multilingual** | English + Traditional Chinese support |
 
-#### Current Recommendations (January 2026)
+#### Recommended Bedrock Models (January 2026)
 
-| Use Case | Recommended Model | Rationale |
-|----------|-------------------|----------|
-| **Query Understanding** | GPT-4o-mini (or latest equivalent) | Fast, cost-effective, sufficient accuracy |
-| **Headnote Generation** | Claude 3.5 Sonnet (or latest equivalent) | Better legal reasoning, lower hallucination |
-| **Citation Extraction** | GPT-4o-mini | Structured output, fast |
-| **Complex Legal Analysis** | Claude Opus / GPT-4 class | When accuracy is critical |
+| Use Case | Recommended Model | Model ID | Rationale |
+|----------|-------------------|----------|----------|
+| **Embeddings** | Amazon Titan Text Embeddings V2 | `amazon.titan-embed-text-v2:0` | Cost-effective ($0.00002/1K tokens), 8K context, 1024 dimensions |
+| **Query Understanding** | Amazon Nova Lite | `amazon.nova-lite-v1:0` | Fast, very low cost, sufficient for query parsing |
+| **Headnote Generation** | Claude 3.7 Sonnet | `anthropic.claude-3-7-sonnet:0` | Best legal reasoning, 200K context, low hallucination |
+| **Citation Extraction** | Amazon Nova Micro | `amazon.nova-micro-v1:0` | Text-only, ultra-fast, structured output |
+| **Complex Legal Analysis** | Claude 3.7 Sonnet | `anthropic.claude-3-7-sonnet:0` | When accuracy is critical |
+| **Batch Summarization** | Claude 3.7 Sonnet (Batch) | `anthropic.claude-3-7-sonnet:0` | 50% discount for bulk headnote generation |
+| **Reranking** | Cohere Rerank 3.5 | `cohere.rerank-v3-5:0` | Improve search result relevance |
+
+#### Model Pricing via Amazon Bedrock (US East Region, January 2026)
+
+| Model | Input (per 1K tokens) | Output (per 1K tokens) | Notes |
+|-------|----------------------|------------------------|-------|
+| Titan Embeddings V2 | $0.00002 | N/A | Embeddings only (via Amazon Bedrock) |
+| Amazon Nova Micro | $0.000035 | $0.00014 | Text-only, fastest (via Amazon Bedrock) |
+| Amazon Nova Lite | $0.00006 | $0.00024 | Multimodal, fast (via Amazon Bedrock) |
+| Amazon Nova Pro | $0.0008 | $0.0032 | Best Amazon model (via Amazon Bedrock) |
+| Claude 3.7 Sonnet | $0.003 | $0.015 | Best quality (via Amazon Bedrock) |
+| Claude 3.7 Sonnet (Batch) | $0.0015 | $0.0075 | 50% discount (via Amazon Bedrock) |
+| Cohere Rerank 3.5 | $2.00 per 1K queries | N/A | Up to 100 docs/query (via Amazon Bedrock) |
 
 #### Evaluation Process
 
-At implementation, benchmark latest models from OpenAI, Anthropic, and Google on a sample of 100 HK judgments measuring:
+Benchmark models on a sample of 100 HK judgments measuring:
 - Headnote accuracy vs. official headnotes (where available)
 - Citation extraction precision/recall
 - Query understanding relevance scoring
+- Cost per document processed
 
 ### 6.2 Embedding Generation
 
 ```python
 # batch/pipeline/embeddings.py
-from openai import OpenAI
+import boto3
+import json
 from typing import List
-import tiktoken
 
-client = OpenAI()
-EMBEDDING_MODEL = "text-embedding-3-large"
-MAX_TOKENS = 8000
+# Initialize Bedrock client
+bedrock = boto3.client(
+    service_name='bedrock-runtime',
+    region_name='ap-southeast-1'  # Singapore for HK proximity
+)
+
+EMBEDDING_MODEL = "amazon.titan-embed-text-v2:0"
+MAX_TOKENS = 8000  # Titan V2 supports 8K tokens
 CHUNK_OVERLAP = 200
+EMBEDDING_DIMENSIONS = 1024  # Titan V2 default
 
-def chunk_text(text: str, max_tokens: int = MAX_TOKENS) -> List[str]:
-    """Split text into chunks that fit within token limit"""
-    enc = tiktoken.encoding_for_model("gpt-4")
-    tokens = enc.encode(text)
+def chunk_text(text: str, max_chars: int = 30000) -> List[str]:
+    """Split text into chunks that fit within token limit.
     
+    Titan V2 supports ~8K tokens. Using char estimate (4 chars/token).
+    """
     chunks = []
     start = 0
-    while start < len(tokens):
-        end = min(start + max_tokens, len(tokens))
-        chunk_tokens = tokens[start:end]
-        chunks.append(enc.decode(chunk_tokens))
-        start = end - CHUNK_OVERLAP if end < len(tokens) else end
+    overlap_chars = CHUNK_OVERLAP * 4
+    
+    while start < len(text):
+        end = min(start + max_chars, len(text))
+        chunks.append(text[start:end])
+        start = end - overlap_chars if end < len(text) else end
     
     return chunks
 
 async def generate_embeddings(text: str) -> List[dict]:
-    """Generate embeddings for text chunks"""
+    """Generate embeddings using Amazon Titan Text Embeddings V2."""
     chunks = chunk_text(text)
     results = []
     
     for i, chunk in enumerate(chunks):
-        response = client.embeddings.create(
-            model=EMBEDDING_MODEL,
-            input=chunk
+        body = json.dumps({
+            "inputText": chunk,
+            "dimensions": EMBEDDING_DIMENSIONS,
+            "normalize": True
+        })
+        
+        response = bedrock.invoke_model(
+            modelId=EMBEDDING_MODEL,
+            body=body,
+            contentType="application/json",
+            accept="application/json"
         )
+        
+        response_body = json.loads(response['body'].read())
+        
         results.append({
             'chunk_index': i,
             'chunk_text': chunk,
-            'embedding': response.data[0].embedding,
-            'token_count': response.usage.total_tokens
+            'embedding': response_body['embedding'],
+            'token_count': response_body.get('inputTextTokenCount', 0)
         })
     
     return results
 ```
 
+> **Note**: Amazon Titan Text Embeddings V2 produces 1024-dimensional vectors by default.
+> Update the database schema to use `vector(1024)` instead of `vector(3072)` if using Titan.
+
 ### 6.3 AI Summarization
 
 ```python
 # batch/pipeline/summarizer.py
-import anthropic
+import boto3
+import json
 from config.settings import HEADNOTE_MODEL
 
-client = anthropic.Anthropic()
+bedrock = boto3.client(
+    service_name='bedrock-runtime',
+    region_name='ap-southeast-1'
+)
 
 HEADNOTE_PROMPT = """Generate a concise legal headnote (max 300 words) for the following judgment.
 Include: (1) Key legal issues, (2) Holdings, (3) Significant legal principles established.
@@ -998,28 +1045,66 @@ Judgment:
 {text}
 """
 
-async def generate_headnote(judgment_text: str, model: str = HEADNOTE_MODEL) -> str:
-    """Generate AI headnote for a judgment.
+async def generate_headnote(
+    judgment_text: str, 
+    model_id: str = "anthropic.claude-3-7-sonnet:0"
+) -> str:
+    """Generate AI headnote using Claude 3.7 Sonnet via Amazon Bedrock.
     
     Args:
         judgment_text: Full judgment text
-        model: Model identifier (default from config, recommend Claude 3.5 Sonnet class)
+        model_id: Bedrock model identifier
     """
-    # Use first 50000 chars to leverage larger context windows
-    truncated = judgment_text[:50000]
+    # Claude 3.7 Sonnet supports 200K context - can use more text
+    truncated = judgment_text[:150000]
     
-    response = client.messages.create(
-        model=model,  # e.g., "claude-3-5-sonnet-20241022" or latest
-        max_tokens=500,
-        messages=[
+    body = json.dumps({
+        "anthropic_version": "bedrock-2023-05-31",
+        "max_tokens": 500,
+        "messages": [
             {
-                "role": "user", 
+                "role": "user",
                 "content": f"You are a legal research assistant specializing in Hong Kong law.\n\n{HEADNOTE_PROMPT.format(text=truncated)}"
             }
         ]
+    })
+    
+    response = bedrock.invoke_model(
+        modelId=model_id,
+        body=body,
+        contentType="application/json",
+        accept="application/json"
     )
     
-    return response.content[0].text
+    response_body = json.loads(response['body'].read())
+    return response_body['content'][0]['text']
+
+
+async def generate_headnotes_batch(judgments: list[dict]) -> list[dict]:
+    """Generate headnotes in batch mode for 50% cost savings.
+    
+    Uses Bedrock batch inference - results delivered to S3.
+    Ideal for bulk processing of historical judgments.
+    """
+    # Prepare batch input file for S3
+    batch_records = []
+    for j in judgments:
+        batch_records.append({
+            "recordId": j['id'],
+            "modelInput": {
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 500,
+                "messages": [{
+                    "role": "user",
+                    "content": f"You are a legal research assistant...\n\n{HEADNOTE_PROMPT.format(text=j['text'][:150000])}"
+                }]
+            }
+        })
+    
+    # Submit to Bedrock batch inference
+    # Results delivered async to S3 bucket
+    # See: https://docs.aws.amazon.com/bedrock/latest/userguide/batch-inference.html
+    return batch_records
 ```
 
 ---
@@ -1237,8 +1322,15 @@ SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_KEY=
 
-# OpenAI
-OPENAI_API_KEY=
+# AWS / Amazon Bedrock
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_REGION=ap-southeast-1
+
+# Bedrock Model Configuration
+BEDROCK_EMBEDDING_MODEL=amazon.titan-embed-text-v2:0
+BEDROCK_SUMMARIZATION_MODEL=anthropic.claude-3-7-sonnet:0
+BEDROCK_QUERY_MODEL=amazon.nova-lite-v1:0
 
 # Scraper
 SCRAPER_REQUEST_DELAY=3.0
