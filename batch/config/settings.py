@@ -25,17 +25,37 @@ class Settings(BaseSettings):
     # Output directory for scraped data
     output_dir: str = "./output"
 
-    # Azure OpenAI (used to call text-embedding-3-large)
+    # Azure OpenAI (embeddings and text generation)
     azure_openai_endpoint: str = ""
     azure_openai_api_key: str = ""
-    azure_openai_api_version: str = "2023-12-01-preview"
+    azure_openai_api_version: str = "2024-10-01-preview"
     azure_openai_embed_deployment: str = ""
+    azure_openai_gpt4o_deployment: str = "gpt-4o"
+    
+    # Azure Storage (for batch processing)
+    azure_storage_account_name: str = ""
+    azure_storage_account_key: str = ""
+    azure_storage_connection_string: str = ""
+    azure_batch_input_container: str = "batch-input"
+    azure_batch_output_container: str = "batch-output"
+    
+    # Azure Service Principal (alternative authentication)
+    azure_tenant_id: str = ""
+    azure_client_id: str = ""
+    azure_client_secret: str = ""
 
     # Anthropic / Bedrock-compatible keys (for Claude via Bedrock)
     anthropic_api_key: str = ""  # optional, kept for compatibility
 
     # AWS / Bedrock
     aws_region: str = "ap-southeast-1"
+    aws_access_key_id: str = ""
+    aws_secret_access_key: str = ""
+    
+    # Bedrock Batch Processing
+    bedrock_batch_input_bucket: str = ""
+    bedrock_batch_output_bucket: str = ""
+    bedrock_batch_role_arn: str = ""
 
     # Scraper settings
     scraper_request_delay: float = 3.0
@@ -47,11 +67,15 @@ class Settings(BaseSettings):
     log_dir: str = "./logs"
     log_level: str = "INFO"
 
-    # AI Models
-    # Logical model identifiers; concrete provider-specific IDs are configured
-    # via environment variables where needed.
-    embedding_model: str = "bedrock-cohere"
-    headnote_model: str = "anthropic.claude-3-7-sonnet:0"
+    # AI Models - Phase 1 Configuration
+    # Phase 1: Use models that don't require Bedrock approval
+    # - Embeddings: Amazon Titan V2 (no approval needed)
+    # - Text generation: Azure GPT-4o (already have access)
+    embedding_model: str = "amazon.titan-embed-text-v2:0"
+    headnote_model: str = "azure-gpt-4o"
+    
+    # Phase 2 (after Claude approval):
+    # headnote_model: str = "anthropic.claude-opus-4-5:0"
 
     # Apify (optional)
     apify_token: Optional[str] = None
