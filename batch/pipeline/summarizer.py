@@ -1,9 +1,9 @@
-"""Headnote generation using Claude 3.7 Sonnet via Amazon Bedrock.
+"""Headnote generation using AI models (Azure GPT-4o or Bedrock Claude).
 
 This module:
 - Builds a structured legal prompt for Hong Kong judgments
 - Retrieves dynamic few-shot examples from headnote_corpus using embeddings
-- Calls Claude 3.7 Sonnet through Amazon Bedrock to generate an AI headnote
+- Calls Azure OpenAI GPT-4o (Phase 1) or Bedrock Claude (Phase 2) to generate an AI headnote
 """
 
 from __future__ import annotations
@@ -112,13 +112,30 @@ def _bedrock_client():
     return boto3.client("bedrock-runtime", region_name=settings.aws_region)
 
 
+def _azure_openai_client():
+    """Get Azure OpenAI client for GPT-4o."""
+    settings = get_settings()
+    try:
+        from openai import AzureOpenAI
+    except ImportError:
+        raise ImportError(
+            "openai package required for Azure OpenAI. Install with: pip install openai"
+        )
+    
+    return AzureOpenAI(
+        api_key=settings.azure_openai_api_key,
+        api_version=settings.azure_openai_api_version,
+        azure_endpoint=settings.azure_openai_endpoint,
+    )
+
+
 async def generate_headnote(case_id: str, *, max_chars: int = 150000) -> Optional[str]:
     """Generate a structured AI headnote for a given court case ID.
 
     This function:
     - Loads the case from court_cases
     - Fetches a small set of dynamic few-shot headnotes from headnote_corpus
-    - Calls Claude 3.7 Sonnet via Bedrock to generate the headnote
+    - Calls Azure GPT-4o (Phase 1) or Bedrock Claude (Phase 2) to generate the headnote
     - Returns the headnote text (does not persist it; caller should store it)
     """
 
@@ -130,7 +147,8 @@ async def generate_headnote(case_id: str, *, max_chars: int = 150000) -> Optiona
         ]
     )
 
-    log = logger.bind(component="summarizer", case_id=case_id)
+    settings = get_settings()
+    log = logger.bind(component="summarizer", case_id=case_id, model=settings.headnote_model)
 
     conn = await _get_db_connection()
     try:
@@ -148,36 +166,58 @@ async def generate_headnote(case_id: str, *, max_chars: int = 150000) -> Optiona
         few_shots = await _fetch_dynamic_few_shots(conn)
         prompt = _build_prompt(truncated, few_shots)
 
-        client = _bedrock_client()
+        # Route to appropriate model based on configuration
+        if settings.headnote_model.startswith("azure-"):
+            # Use Azure OpenAI (Phase 1)
+            log.info("Using Azure OpenAI for headnote generation")
+            client = _azure_openai_client()
+            
+            import asyncio
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: client.chat.completions.create(
+                    model=settings.azure_openai_gpt4o_deployment,
+                    messages=[
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=600,
+                    temperature=0.1,
+                ),
+            )
+            return response.choices[0].message.content
+        
+        else:
+            # Use Bedrock (Phase 2 - Claude models)
+            log.info("Using Bedrock for headnote generation")
+            client = _bedrock_client()
 
-        body = json.dumps(
-            {
-                "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 600,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    }
-                ],
-            }
-        )
+            body = json.dumps(
+                {
+                    "anthropic_version": "bedrock-2023-05-31",
+                    "max_tokens": 600,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": prompt,
+                        }
+                    ],
+                }
+            )
 
-        import asyncio
-
-        loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(
-            None,
-            lambda: client.invoke_model(
-                modelId=get_settings().headnote_model,
-                body=body,
-                contentType="application/json",
-                accept="application/json",
-            ),
-        )
-        payload = json.loads(response["body"].read())
-        text = payload["content"][0]["text"]
-        return text
+            import asyncio
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: client.invoke_model(
+                    modelId=settings.headnote_model,
+                    body=body,
+                    contentType="application/json",
+                    accept="application/json",
+                ),
+            )
+            payload = json.loads(response["body"].read())
+            return payload["content"][0]["text"]
 
     finally:
         await conn.close()
