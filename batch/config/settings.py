@@ -25,11 +25,17 @@ class Settings(BaseSettings):
     # Output directory for scraped data
     output_dir: str = "./output"
 
-    # OpenAI
-    openai_api_key: str = ""
+    # Azure OpenAI (used to call text-embedding-3-large)
+    azure_openai_endpoint: str = ""
+    azure_openai_api_key: str = ""
+    azure_openai_api_version: str = "2023-12-01-preview"
+    azure_openai_embed_deployment: str = ""
 
-    # Anthropic
-    anthropic_api_key: str = ""
+    # Anthropic / Bedrock-compatible keys (for Claude via Bedrock)
+    anthropic_api_key: str = ""  # optional, kept for compatibility
+
+    # AWS / Bedrock
+    aws_region: str = "ap-southeast-1"
 
     # Scraper settings
     scraper_request_delay: float = 3.0
@@ -42,8 +48,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     # AI Models
-    embedding_model: str = "text-embedding-3-large"
-    headnote_model: str = "claude-3-5-sonnet-20241022"
+    # Logical model identifiers; concrete provider-specific IDs are configured
+    # via environment variables where needed.
+    embedding_model: str = "bedrock-cohere"
+    headnote_model: str = "anthropic.claude-3-7-sonnet:0"
 
     # Apify (optional)
     apify_token: Optional[str] = None

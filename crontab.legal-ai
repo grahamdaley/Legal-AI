@@ -1,0 +1,102 @@
+# Legal-AI Daily Cron Jobs
+# This crontab file defines scheduled jobs for scraping Hong Kong legal data,
+# ingesting into database, and generating embeddings/headnotes.
+#
+# Installation:
+#   crontab crontab.legal-ai
+#
+# Paths assume deployment to /opt/legal-ai with virtualenv at /opt/legal-ai/batch/.venv
+# For production deployment, run as the 'scraper' user
+
+# Set environment variables for all jobs
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+LEGAL_AI_HOME=/opt/legal-ai
+BATCH_DIR=/opt/legal-ai/batch
+PYTHON=/opt/legal-ai/batch/.venv/bin/python
+LOG_DIR=/var/log/legal-ai
+
+# Email for cron job output (set to your email or remove for no emails)
+# MAILTO=admin@example.com
+
+# ==============================================================================
+# DAILY SCRAPING JOBS
+# ==============================================================================
+
+# Scrape latest Judiciary updates (runs at 2:00 AM daily)
+# Fetches new cases from current year using resume capability
+0 2 * * * cd $BATCH_DIR && $PYTHON -m jobs.run_judiciary --courts CFA CA CFI DC --year-from $(date +\%Y) --resume >> $LOG_DIR/cron-judiciary.log 2>&1
+
+# Scrape latest eLegislation updates (runs at 3:00 AM daily)
+# Checks for updates to existing legislation
+0 3 * * * cd $BATCH_DIR && $PYTHON -m jobs.run_elegislation --resume >> $LOG_DIR/cron-elegislation.log 2>&1
+
+# ==============================================================================
+# DATABASE INGESTION
+# ==============================================================================
+
+# Ingest newly scraped Judiciary cases (runs at 5:00 AM daily)
+# Processes all JSONL files in output directory
+0 5 * * * cd $BATCH_DIR && $PYTHON -m jobs.ingest_jsonl --source judiciary --all >> $LOG_DIR/cron-ingest-judiciary.log 2>&1
+
+# Ingest newly scraped Legislation (runs at 5:30 AM daily)
+30 5 * * * cd $BATCH_DIR && $PYTHON -m jobs.ingest_jsonl --source elegislation --all >> $LOG_DIR/cron-ingest-elegislation.log 2>&1
+
+# ==============================================================================
+# AI PROCESSING (Headnotes & Embeddings)
+# ==============================================================================
+
+# Generate AI headnotes for cases without them (runs at 6:00 AM daily)
+# Processes up to 100 cases per day to manage API costs
+0 6 * * * cd $BATCH_DIR && $PYTHON -m jobs.generate_headnotes --limit 100 >> $LOG_DIR/cron-headnotes.log 2>&1
+
+# Generate semantic embeddings for cases (runs at 7:00 AM daily)
+# Processes up to 200 cases per day (semantic chunking + embedding generation)
+0 7 * * * cd $BATCH_DIR && $PYTHON -m jobs.generate_embeddings_cases --limit 200 >> $LOG_DIR/cron-embeddings-cases.log 2>&1
+
+# Generate embeddings for legislation (runs at 8:00 AM daily, if needed)
+# Uncomment if you have a similar job for legislation embeddings
+# 0 8 * * * cd $BATCH_DIR && $PYTHON -m jobs.generate_embeddings_legislation --limit 100 >> $LOG_DIR/cron-embeddings-legislation.log 2>&1
+
+# ==============================================================================
+# WEEKLY MAINTENANCE
+# ==============================================================================
+
+# Clean up old output files (runs at 1:00 AM every Sunday)
+# Keeps only last 30 days of JSONL files
+0 1 * * 0 find $BATCH_DIR/output -name "*.jsonl" -mtime +30 -delete >> $LOG_DIR/cron-cleanup.log 2>&1
+
+# Clean up old log files (runs at 1:15 AM every Sunday)
+# Compress logs older than 7 days, delete compressed logs older than 90 days
+15 1 * * 0 find $LOG_DIR -name "*.log" -mtime +7 -exec gzip {} \; >> $LOG_DIR/cron-cleanup.log 2>&1
+15 1 * * 0 find $LOG_DIR -name "*.log.gz" -mtime +90 -delete >> $LOG_DIR/cron-cleanup.log 2>&1
+
+# ==============================================================================
+# NOTES
+# ==============================================================================
+# 
+# Job Sequence:
+# 1. Scrape new data (2:00-4:00 AM)
+# 2. Ingest into database (5:00-5:30 AM)
+# 3. Generate AI headnotes (6:00 AM)
+# 4. Generate embeddings (7:00 AM)
+#
+# Rate Limiting:
+# - Scrapers have built-in 3s delays between requests
+# - Processing jobs are limited to prevent excessive API usage
+#
+# Monitoring:
+# - Check logs in /var/log/legal-ai/
+# - Set MAILTO variable above to receive cron job output via email
+#
+# Adjusting Limits:
+# - Modify --limit parameters based on:
+#   * Daily volume of new cases
+#   * API rate limits and costs (OpenAI, Anthropic, Bedrock)
+#   * Available processing time window
+#
+# For local development (macOS), adjust paths:
+#   LEGAL_AI_HOME=~/CascadeProjects/Legal-AI
+#   BATCH_DIR=~/CascadeProjects/Legal-AI/batch
+#   PYTHON=~/CascadeProjects/Legal-AI/batch/.venv/bin/python
+#   LOG_DIR=~/CascadeProjects/Legal-AI/logs
