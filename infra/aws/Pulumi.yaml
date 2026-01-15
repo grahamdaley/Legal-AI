@@ -1,0 +1,7 @@
+name: legal-ai-aws
+runtime: nodejs
+description: AWS infrastructure for Legal-AI Bedrock batch processing
+
+config:
+  aws:region:
+    value: ap-southeast-1

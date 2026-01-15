@@ -1,0 +1,22 @@
+{
+  "name": "legal-ai-azure",
+  "version": "1.0.0",
+  "description": "Azure infrastructure for Legal-AI OpenAI batch processing",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "preview": "pulumi preview",
+    "up": "pulumi up",
+    "destroy": "pulumi destroy",
+    "output": "pulumi stack output"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@pulumi/pulumi": "^3.0.0",
+    "@pulumi/azure-native": "^2.0.0",
+    "@pulumi/azuread": "^5.0.0"
+  }
+}

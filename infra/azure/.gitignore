@@ -1,0 +1,14 @@
+# Node.js
+node_modules/
+package-lock.json
+yarn.lock
+
+# TypeScript
+bin/
+*.js
+*.js.map
+
+# Pulumi
+.pulumi/
+Pulumi.*.yaml
+!Pulumi.yaml
