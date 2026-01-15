@@ -40,9 +40,9 @@ const resourceGroup = new azure.resources.ResourceGroup(`${projectName}-rg-${env
 });
 
 // Create Storage Account for batch processing
-const storageAccountName = `${projectName}storage${environment}`.substring(0, 24).toLowerCase();
+const storageAccountNameValue = `${projectName}storage${environment}`.substring(0, 24).toLowerCase();
 const storageAccount = new azure.storage.StorageAccount(`${projectName}storage${environment}`, {
-    accountName: storageAccountName,
+    accountName: storageAccountNameValue,
     resourceGroupName: resourceGroup.name,
     location: location,
     sku: {
@@ -143,7 +143,7 @@ const storageAccountKeys = pulumi
     );
 
 // Construct storage connection string
-const storageConnectionString = pulumi
+const storageConnectionStringValue = pulumi
     .all([storageAccount.name, storageAccountKeys])
     .apply(
         ([name, keys]) =>
@@ -157,7 +157,7 @@ export const storageAccountId = storageAccount.id;
 export const inputContainerName = inputContainer.name;
 export const outputContainerName = outputContainer.name;
 
-export const storageConnectionString = pulumi.secret(storageConnectionString);
+export const storageConnectionString = pulumi.secret(storageConnectionStringValue);
 export const storageAccountKey = pulumi.secret(
     storageAccountKeys.apply(keys => keys.keys[0].value)
 );

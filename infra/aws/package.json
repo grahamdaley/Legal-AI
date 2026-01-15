@@ -8,11 +8,18 @@
     "preview": "pulumi preview",
     "up": "pulumi up",
     "destroy": "pulumi destroy",
-    "output": "pulumi stack output"
+    "output": "pulumi stack output",
+    "test": "mocha --require ts-node/register --extensions ts index.test.ts",
+    "test:watch": "mocha --require ts-node/register --extensions ts --watch index.test.ts"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "typescript": "^5.0.0"
+    "@types/mocha": "^10.0.0",
+    "@types/chai": "^4.3.0",
+    "typescript": "^5.0.0",
+    "mocha": "^10.0.0",
+    "chai": "^4.3.0",
+    "ts-node": "^10.9.0"
   },
   "dependencies": {
     "@pulumi/pulumi": "^3.0.0",
