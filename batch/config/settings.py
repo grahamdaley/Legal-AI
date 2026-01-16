@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     azure_openai_api_version: str = "2024-10-01-preview"
     azure_openai_embed_deployment: str = ""
     azure_openai_gpt4o_deployment: str = "gpt-4o"
+    azure_openai_gpt4o_mini_deployment: str = "gpt-4o-mini"
+    azure_openai_gpt5_mini_deployment: str = "gpt-5-mini"
     
     # Azure Storage (for batch processing)
     azure_storage_account_name: str = ""
@@ -70,12 +72,14 @@ class Settings(BaseSettings):
     # AI Models - Phase 1 Configuration
     # Phase 1: Use models that don't require Bedrock approval
     # - Embeddings: Amazon Titan V2 (no approval needed)
-    # - Text generation: Azure GPT-4o (already have access)
+    # - Text generation: Azure GPT-4o-mini (cost-effective for headnotes)
+    # NOTE: Switch to azure-gpt-5-mini once deployed in Azure OpenAI
     embedding_model: str = "amazon.titan-embed-text-v2:0"
-    headnote_model: str = "azure-gpt-4o"
+    headnote_model: str = "azure-gpt-4o-mini"
     
-    # Phase 2 (after Claude approval):
-    # headnote_model: str = "anthropic.claude-opus-4-5:0"
+    # Alternative models:
+    # headnote_model: str = "azure-gpt-4o"  # Higher quality, 15x cost
+    # headnote_model: str = "anthropic.claude-opus-4-5:0"  # Phase 2, after Bedrock approval
 
     # Apify (optional)
     apify_token: Optional[str] = None

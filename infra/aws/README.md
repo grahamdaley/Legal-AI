@@ -79,8 +79,8 @@ pulumi stack init dev
 Set configuration values:
 
 ```bash
-# Set AWS region (default is ap-southeast-1)
-pulumi config set aws:region ap-southeast-1
+# Set AWS region (default is us-east-1)
+pulumi config set aws:region us-east-1
 
 # Set environment name (optional, defaults to "dev")
 pulumi config set environment dev
@@ -139,7 +139,7 @@ cd ..
 # AWS credentials for the application user
 AWS_ACCESS_KEY_ID=$(pulumi stack output appUserAccessKeyId)
 AWS_SECRET_ACCESS_KEY=$(pulumi stack output appUserSecretAccessKey --show-secrets)
-AWS_REGION=ap-southeast-1
+AWS_REGION=us-east-1
 
 # S3 bucket names
 BEDROCK_BATCH_INPUT_BUCKET=$(pulumi stack output inputBucketName)
@@ -247,7 +247,7 @@ aws sts get-caller-identity
 If you get "model not available" errors, check that the models are enabled in your AWS account:
 
 ```bash
-aws bedrock list-foundation-models --region ap-southeast-1
+aws bedrock list-foundation-models --region us-east-1
 ```
 
 Some models require requesting access through the AWS Bedrock console.

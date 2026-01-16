@@ -14,6 +14,9 @@ import * as aws from "@pulumi/aws";
 const config = new pulumi.Config();
 const environment = config.get("environment") || "dev";
 const projectName = "legal-ai";
+// We keep all Bedrock resources and S3 buckets in us-east-1 so batch jobs
+// can run against Bedrock models that are only available in that region.
+const bedrockRegion = "us-east-1";
 
 // Common tags
 const commonTags = {
@@ -26,8 +29,10 @@ const commonTags = {
 const current = aws.getCallerIdentity({});
 
 // S3 Bucket for batch job inputs
+// Use a region suffix in the bucket name to avoid clashes with any existing
+// buckets that might have been created in other regions.
 const inputBucket = new aws.s3.BucketV2(`${projectName}-bedrock-batch-input-${environment}`, {
-    bucket: `${projectName}-bedrock-batch-input-${environment}`,
+    bucket: `${projectName}-bedrock-batch-input-${environment}-${bedrockRegion}`,
     tags: commonTags,
 });
 
@@ -41,8 +46,10 @@ const inputBucketPublicAccessBlock = new aws.s3.BucketPublicAccessBlock(`${proje
 });
 
 // S3 Bucket for batch job outputs
+// Use a region suffix in the bucket name to avoid clashes with any existing
+// buckets that might have been created in other regions.
 const outputBucket = new aws.s3.BucketV2(`${projectName}-bedrock-batch-output-${environment}`, {
-    bucket: `${projectName}-bedrock-batch-output-${environment}`,
+    bucket: `${projectName}-bedrock-batch-output-${environment}-${bedrockRegion}`,
     tags: commonTags,
 });
 
@@ -146,13 +153,13 @@ const bedrockPolicy = new aws.iam.RolePolicy(`${projectName}-bedrock-invoke-poli
             ],
             Resource: [
                 // Claude models (text generation)
-                "arn:aws:bedrock:ap-southeast-1::foundation-model/anthropic.claude-opus-4-5:0",
-                "arn:aws:bedrock:ap-southeast-1::foundation-model/anthropic.claude-3-7-sonnet:0",
-                "arn:aws:bedrock:ap-southeast-1::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0",
+                "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-opus-4-5:0",
+                "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-7-sonnet:0",
+                "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0",
                 // Embedding models
-                "arn:aws:bedrock:ap-southeast-1::foundation-model/amazon.titan-embed-text-v2:0",
-                "arn:aws:bedrock:ap-southeast-1::foundation-model/cohere.embed-english-v3",
-                "arn:aws:bedrock:ap-southeast-1::foundation-model/cohere.embed-multilingual-v3",
+                "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v2:0",
+                "arn:aws:bedrock:us-east-1::foundation-model/cohere.embed-english-v3",
+                "arn:aws:bedrock:us-east-1::foundation-model/cohere.embed-multilingual-v3",
             ],
         }],
     }),
@@ -193,6 +200,8 @@ const appUserPolicy = new aws.iam.UserPolicy(`${projectName}-app-user-policy`, {
                             "bedrock:GetModelInvocationJob",
                             "bedrock:ListModelInvocationJobs",
                             "bedrock:StopModelInvocationJob",
+                            "bedrock:ListFoundationModels",
+                            "bedrock:InvokeModel"
                         ],
                         Resource: "*",
                     },

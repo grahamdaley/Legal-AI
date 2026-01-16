@@ -5,13 +5,14 @@ This guide walks you through setting up the Legal-AI system with Phase 1 models 
 ## Phase 1 Configuration
 
 **Embeddings:** Amazon Titan Text Embeddings V2 (Bedrock) - ✅ No approval needed  
-**Text Generation:** Azure OpenAI GPT-4o - ✅ Already have access
+**Text Generation:** Azure OpenAI GPT-4o-mini - ✅ No approval needed, 93% cheaper than GPT-4o
 
 ## Prerequisites
 
 1. **AWS Account** with Bedrock access (for embeddings)
-2. **Azure OpenAI** resource with GPT-4o deployment
+2. **Azure Subscription** (OpenAI resource will be created by Pulumi)
 3. **Supabase** database
+4. **Azure OpenAI Access** - Apply at https://aka.ms/oai/access (typically 1-2 business days)
 
 ## Step 1: Deploy Infrastructure
 
@@ -30,22 +31,42 @@ pulumi config set environment dev
 pulumi up
 ```
 
-### Azure Infrastructure (optional, for batch processing)
+### Azure Infrastructure (for OpenAI + batch processing)
+
+Pulumi will create:
+- Azure OpenAI account with GPT-4o-mini deployment
+- Storage Account for batch processing
+- Service Principal with proper permissions
 
 ```bash
 cd infra/azure/
 npm install
 
+# Login to Azure
+az login
+az account set --subscription "<your-subscription-id>"
+
 # Initialize stack  
 pulumi stack init dev
-pulumi config set azure-native:location eastasia  # Hong Kong
+pulumi config set azure-native:location southeastasia  # Or: eastus, westeurope
 pulumi config set environment dev
 
-# If you have existing Azure OpenAI resource
-pulumi config set openaiResourceName your-openai-resource
-pulumi config set openaiResourceGroup your-resource-group
+# Optional: Deploy GPT-4o instead of GPT-4o-mini
+pulumi config set deployGpt4o true
+pulumi config set deployGpt4oMini false
 
-# Deploy
+# Deploy (takes ~5-10 minutes)
+pulumi up
+```
+
+**Note:** If you don't have Azure OpenAI access approval yet:
+```bash
+# Skip model deployment temporarily
+pulumi config set deployGpt4oMini false
+pulumi up  # Deploy storage only
+
+# After approval, deploy model
+pulumi config set deployGpt4oMini true
 pulumi up
 ```
 
@@ -55,50 +76,16 @@ After deploying infrastructure, sync credentials to `.env`:
 
 ```bash
 cd infra/
-./sync-env.sh --aws-only
-# or for both:
 ./sync-env.sh
 ```
 
-## Step 3: Configure Azure OpenAI
+This automatically extracts:
+- AWS credentials and S3 bucket names
+- Azure OpenAI endpoint, API key, and deployment names
+- Azure Storage credentials
+- Service Principal credentials
 
-Add these to your `.env` file (manually):
-
-```bash
-# Azure OpenAI - eastasia (Hong Kong) or southeastasia (Singapore)
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com
-AZURE_OPENAI_API_KEY=your-api-key
-AZURE_OPENAI_API_VERSION=2024-10-01-preview
-AZURE_OPENAI_GPT4O_DEPLOYMENT=gpt-4o
-
-# Optional: If you also want embeddings from Azure
-AZURE_OPENAI_EMBED_DEPLOYMENT=text-embedding-3-large
-```
-
-**How to get these values:**
-
-```bash
-# List your Azure OpenAI resources
-az cognitiveservices account list \
-  --query "[?kind=='OpenAI'].[name,location,properties.endpoint]" \
-  --output table
-
-# Get API key
-az cognitiveservices account keys list \
-  --name your-openai-resource \
-  --resource-group your-resource-group \
-  --query key1 \
-  --output tsv
-
-# List deployments
-az cognitiveservices account deployment list \
-  --name your-openai-resource \
-  --resource-group your-resource-group \
-  --query "[].{name:name,model:properties.model.name}" \
-  --output table
-```
-
-## Step 4: Configure Supabase
+## Step 3: Configure Supabase
 
 Add Supabase configuration to `.env`:
 
@@ -115,7 +102,7 @@ SUPABASE_SERVICE_KEY=your-production-key
 SUPABASE_DB_URL=postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres
 ```
 
-## Step 5: Verify Configuration
+## Step 4: Verify Configuration
 
 Your `.env` should now have:
 
@@ -128,23 +115,26 @@ BEDROCK_BATCH_INPUT_BUCKET=legal-ai-bedrock-batch-input-dev
 BEDROCK_BATCH_OUTPUT_BUCKET=legal-ai-bedrock-batch-output-dev
 BEDROCK_BATCH_ROLE_ARN=arn:aws:iam::...
 
-# Azure OpenAI (text generation)
-AZURE_OPENAI_ENDPOINT=https://...
+# Azure OpenAI (text generation) - auto-synced from Pulumi
+AZURE_OPENAI_ENDPOINT=https://legalai-openai-dev.openai.azure.com/
 AZURE_OPENAI_API_KEY=...
 AZURE_OPENAI_API_VERSION=2024-10-01-preview
-AZURE_OPENAI_GPT4O_DEPLOYMENT=gpt-4o
+AZURE_OPENAI_GPT4O_MINI_DEPLOYMENT=gpt-4o-mini
+AZURE_OPENAI_GPT4O_DEPLOYMENT=gpt-4o  # If you deployed GPT-4o
+
+# Azure Storage (batch processing) - auto-synced from Pulumi
+AZURE_STORAGE_ACCOUNT_NAME=...
+AZURE_STORAGE_CONNECTION_STRING=...
+AZURE_BATCH_INPUT_CONTAINER=batch-input
+AZURE_BATCH_OUTPUT_CONTAINER=batch-output
 
 # Supabase (database)
 SUPABASE_URL=...
 SUPABASE_SERVICE_KEY=...
 SUPABASE_DB_URL=postgresql://...
-
-# AI Models (Phase 1)
-EMBEDDING_MODEL=amazon.titan-embed-text-v2:0
-HEADNOTE_MODEL=azure-gpt-4o
 ```
 
-## Step 6: Test the Setup
+## Step 5: Test the Setup
 
 ### Test AWS Bedrock Access
 
@@ -158,7 +148,7 @@ from dotenv import load_dotenv
 load_dotenv('../.env')
 
 client = boto3.client(
-    'bedrock-runtime',
+    'bedrock',
     region_name=os.getenv('AWS_REGION'),
     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
@@ -189,7 +179,7 @@ client = AzureOpenAI(
 )
 
 response = client.chat.completions.create(
-    model=os.getenv('AZURE_OPENAI_GPT4O_DEPLOYMENT'),
+    model=os.getenv('AZURE_OPENAI_GPT4O_MINI_DEPLOYMENT'),
     messages=[{'role': 'user', 'content': 'Test'}],
     max_tokens=10
 )
@@ -212,7 +202,7 @@ from dotenv import load_dotenv
 load_dotenv('../.env')
 
 client = boto3.client(
-    'bedrock-runtime',
+    'bedrock',
     region_name=os.getenv('AWS_REGION'),
     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
@@ -237,7 +227,7 @@ print(f'Embedding dimensions: {len(embedding)}')
 "
 ```
 
-## Step 7: Run a Test Job
+## Step 6: Run a Test Job
 
 Generate embeddings for a test case:
 
@@ -306,36 +296,70 @@ Once everything is working:
 4. **Generate headnotes** using GPT-4o
 5. **Compare quality** once Claude is approved
 
-## Migration to Phase 2 (After Claude Approval)
+## Upgrading Models
 
-When Claude access is approved:
+### To GPT-4o (Higher Quality)
 
-1. Update `.env`:
+If you need better quality:
+
+1. Deploy GPT-4o:
    ```bash
-   HEADNOTE_MODEL=anthropic.claude-opus-4-5:0
+   cd infra/azure/
+   pulumi config set deployGpt4o true
+   pulumi up
    ```
 
-2. Restart your services - that's it!
+2. Update `batch/config/settings.py`:
+   ```python
+   headnote_model: str = "azure-gpt-4o"
+   ```
 
-The code automatically routes to the correct model based on the `HEADNOTE_MODEL` value.
+3. Re-sync credentials:
+   ```bash
+   cd infra/
+   ./sync-env.sh --azure-only
+   ```
+
+### To Claude Opus 4.5 (Best Quality, After Approval)
+
+When AWS Bedrock Claude access is approved:
+
+1. Update `batch/config/settings.py`:
+   ```python
+   headnote_model: str = "anthropic.claude-opus-4-5:0"
+   ```
+
+2. Restart your services
+
+The code automatically routes to the correct model based on the `headnote_model` value.
 
 ## Cost Estimates (Phase 1)
 
-**Embeddings (Titan V2):**
-- $0.10 per 1M input tokens
-- ~100 tokens per document = $0.01 per 1000 documents
+**Embeddings (Titan V2, Batch Mode):**
+- $0.000055 per 1,000 input tokens (batch)
+- For 120,000 cases × 5,000 tokens = 600M tokens
+- Cost: **$33**
 
-**Text Generation (GPT-4o):**
-- Input: $2.50 per 1M tokens
-- Output: $10 per 1M tokens  
-- ~2000 tokens per headnote = $0.05 per headnote
+**Text Generation (GPT-4o-mini, Batch Mode):**
+- Input: $0.075 per 1M tokens
+- Output: $0.30 per 1M tokens  
+- For 120,000 cases:
+  - Input: 600M tokens × $0.075/1M = $45
+  - Output: 60M tokens × $0.30/1M = $18
+- Cost: **$63**
 
-**Total for 10,000 cases:**
-- Embeddings: $10
-- Headnotes: $500
-- **Total: ~$510**
+**Azure Storage:**
+- ~$2-5 per month
 
-Compare to Phase 2 (Claude Opus 4.5): ~$1,500 (3x more expensive but better quality)
+**Total for 120,000 cases (one-time):**
+- Embeddings: $33
+- Headnotes: $63
+- Storage: $5
+- **Total: ~$101**
+
+**Alternative models:**
+- GPT-4o (batch): ~$1,050 (15x more expensive, higher quality)
+- Claude Opus 4.5 (batch, after approval): ~$2,250 (35x more expensive, best quality)
 
 ## Questions?
 

@@ -1,9 +1,9 @@
-"""Headnote generation using AI models (Azure GPT-4o or Bedrock Claude).
+"""Headnote generation using AI models (Azure GPT-4o/GPT-5-mini or Bedrock Claude).
 
 This module:
 - Builds a structured legal prompt for Hong Kong judgments
 - Retrieves dynamic few-shot examples from headnote_corpus using embeddings
-- Calls Azure OpenAI GPT-4o (Phase 1) or Bedrock Claude (Phase 2) to generate an AI headnote
+- Calls Azure OpenAI (Phase 1) or Bedrock Claude (Phase 2) to generate an AI headnote
 """
 
 from __future__ import annotations
@@ -135,7 +135,7 @@ async def generate_headnote(case_id: str, *, max_chars: int = 150000) -> Optiona
     This function:
     - Loads the case from court_cases
     - Fetches a small set of dynamic few-shot headnotes from headnote_corpus
-    - Calls Azure GPT-4o (Phase 1) or Bedrock Claude (Phase 2) to generate the headnote
+    - Calls Azure OpenAI (Phase 1) or Bedrock Claude (Phase 2) to generate the headnote
     - Returns the headnote text (does not persist it; caller should store it)
     """
 
@@ -172,12 +172,23 @@ async def generate_headnote(case_id: str, *, max_chars: int = 150000) -> Optiona
             log.info("Using Azure OpenAI for headnote generation")
             client = _azure_openai_client()
             
+            # Map headnote_model to deployment name
+            deployment_map = {
+                "azure-gpt-4o": settings.azure_openai_gpt4o_deployment,
+                "azure-gpt-4o-mini": settings.azure_openai_gpt4o_mini_deployment,
+                "azure-gpt-5-mini": settings.azure_openai_gpt5_mini_deployment,
+            }
+            deployment_name = deployment_map.get(settings.headnote_model)
+            if not deployment_name:
+                log.error(f"Unknown Azure model: {settings.headnote_model}")
+                return None
+            
             import asyncio
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(
                 None,
                 lambda: client.chat.completions.create(
-                    model=settings.azure_openai_gpt4o_deployment,
+                    model=deployment_name,
                     messages=[
                         {"role": "user", "content": prompt}
                     ],

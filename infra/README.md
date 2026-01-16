@@ -82,7 +82,7 @@ Both infrastructures require:
 cd aws/
 npm install
 pulumi stack init dev
-pulumi config set aws:region ap-southeast-1
+pulumi config set aws:region us-east-1
 pulumi config set environment dev
 pulumi up
 ```
@@ -147,8 +147,8 @@ pulumi stack output bedrockRoleArn
 Add to `.env`:
 ```bash
 AWS_ACCESS_KEY_ID=<appUserAccessKeyId>
-AWS_SECRET_ACCESS_KEY=<appUserSecretAccessKey>
-AWS_REGION=ap-southeast-1
+AWS_SECRET_ACCESS_KEY=<appUserAccessKeyId>
+AWS_REGION=us-east-1
 BEDROCK_BATCH_INPUT_BUCKET=<inputBucketName>
 BEDROCK_BATCH_OUTPUT_BUCKET=<outputBucketName>
 BEDROCK_BATCH_ROLE_ARN=<bedrockRoleArn>

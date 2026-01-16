@@ -157,7 +157,7 @@ if [ "$SYNC_AWS" = true ]; then
     
     # Set AWS_REGION if not already set
     if ! grep -q "^AWS_REGION=" "$ENV_FILE" 2>/dev/null; then
-        update_env_var "AWS_REGION" "ap-southeast-1"
+        update_env_var "AWS_REGION" "us-east-1"
     fi
     
     echo ""
@@ -174,6 +174,10 @@ if [ "$SYNC_AZURE" = true ]; then
     fi
     
     # Get Azure outputs
+    AZURE_OPENAI_ENDPOINT=$(get_pulumi_output "$AZURE_DIR" "openaiEndpoint" "$AZURE_STACK")
+    AZURE_OPENAI_API_KEY=$(get_pulumi_output "$AZURE_DIR" "openaiApiKey" "$AZURE_STACK")
+    AZURE_OPENAI_GPT4O_MINI_DEPLOYMENT=$(get_pulumi_output "$AZURE_DIR" "gpt4oMiniDeploymentName" "$AZURE_STACK")
+    AZURE_OPENAI_GPT4O_DEPLOYMENT=$(get_pulumi_output "$AZURE_DIR" "gpt4oDeploymentName" "$AZURE_STACK")
     AZURE_STORAGE_ACCOUNT_NAME=$(get_pulumi_output "$AZURE_DIR" "storageAccountName" "$AZURE_STACK")
     AZURE_STORAGE_ACCOUNT_KEY=$(get_pulumi_output "$AZURE_DIR" "storageAccountKey" "$AZURE_STACK")
     AZURE_STORAGE_CONNECTION_STRING=$(get_pulumi_output "$AZURE_DIR" "storageConnectionString" "$AZURE_STACK")
@@ -184,6 +188,10 @@ if [ "$SYNC_AZURE" = true ]; then
     AZURE_CLIENT_SECRET=$(get_pulumi_output "$AZURE_DIR" "servicePrincipalClientSecret" "$AZURE_STACK")
     
     # Update .env
+    update_env_var "AZURE_OPENAI_ENDPOINT" "$AZURE_OPENAI_ENDPOINT"
+    update_env_var "AZURE_OPENAI_API_KEY" "$AZURE_OPENAI_API_KEY"
+    update_env_var "AZURE_OPENAI_GPT4O_MINI_DEPLOYMENT" "$AZURE_OPENAI_GPT4O_MINI_DEPLOYMENT"
+    update_env_var "AZURE_OPENAI_GPT4O_DEPLOYMENT" "$AZURE_OPENAI_GPT4O_DEPLOYMENT"
     update_env_var "AZURE_STORAGE_ACCOUNT_NAME" "$AZURE_STORAGE_ACCOUNT_NAME"
     update_env_var "AZURE_STORAGE_ACCOUNT_KEY" "$AZURE_STORAGE_ACCOUNT_KEY"
     update_env_var "AZURE_STORAGE_CONNECTION_STRING" "$AZURE_STORAGE_CONNECTION_STRING"
@@ -193,9 +201,14 @@ if [ "$SYNC_AZURE" = true ]; then
     update_env_var "AZURE_CLIENT_ID" "$AZURE_CLIENT_ID"
     update_env_var "AZURE_CLIENT_SECRET" "$AZURE_CLIENT_SECRET"
     
+    # Set API version if not already set
+    if ! grep -q "^AZURE_OPENAI_API_VERSION=" "$ENV_FILE" 2>/dev/null; then
+        update_env_var "AZURE_OPENAI_API_VERSION" "2024-10-01-preview"
+    fi
+    
     echo ""
 fi
 
 echo -e "${GREEN}✓ Successfully synced Pulumi outputs to $ENV_FILE${NC}"
 echo ""
-echo -e "${YELLOW}Note: Other environment variables (like SUPABASE_*, AZURE_OPENAI_*) must be set manually${NC}"
+echo -e "${YELLOW}Note: Other environment variables (like SUPABASE_*) must be set manually${NC}"

@@ -7,21 +7,27 @@ This directory contains Pulumi Infrastructure as Code (IaC) for provisioning Azu
 The Pulumi script provisions:
 
 1. **Resource Group**:
-   - `legal-ai-rg-{environment}`: Container for all Azure resources
+   - `legalai-rg-{environment}`: Container for all Azure resources
 
-2. **Storage Account**:
+2. **Azure OpenAI (Cognitive Services)**:
+   - Azure OpenAI account (S0 tier)
+   - GPT-4o-mini model deployment (default, cost-effective)
+   - GPT-4o model deployment (optional, higher quality)
+   - Custom subdomain for API endpoint
+
+3. **Storage Account**:
    - Storage account with 2 blob containers:
      - `batch-input`: Stores JSONL input files for batch jobs
      - `batch-output`: Stores results from Azure OpenAI batch jobs
    - Lifecycle policy: Automatically deletes files after 90 days
    - Security: HTTPS-only, TLS 1.2+, no public access
 
-3. **Service Principal**:
+4. **Service Principal**:
    - Azure AD application and service principal for authentication
    - Client ID and secret for programmatic access
    - Valid for 1 year (renewable)
 
-4. **RBAC Role Assignments**:
+5. **RBAC Role Assignments**:
    - **Storage Blob Data Contributor**: Allows the service principal to read/write blob storage
    - **Cognitive Services OpenAI User**: Allows the service principal to use Azure OpenAI
 
@@ -31,6 +37,7 @@ The Pulumi script provisions:
    ```bash
    brew install azure-cli  # macOS
    az login
+   az account set --subscription "<your-subscription-id>"
    ```
 
 2. **Pulumi CLI** installed:
@@ -43,7 +50,12 @@ The Pulumi script provisions:
    brew install node  # macOS
    ```
 
-4. **Azure OpenAI resource** already deployed (this script doesn't create it, only assigns permissions)
+4. **Azure OpenAI Access Approval**:
+   - ⚠️ Azure OpenAI requires application approval
+   - Apply at: https://aka.ms/oai/access
+   - Typically takes 1-2 business days
+   - You can deploy storage + service principal while waiting
+   - Set `deployGpt4o: false` if not yet approved
 
 ## Setup
 
@@ -77,15 +89,22 @@ pulumi stack init dev
 Set required configuration values:
 
 ```bash
-# Set Azure region
+# Set Azure region (choose one close to your users)
 pulumi config set azure-native:location southeastasia
+# Options: southeastasia, eastus, westeurope, australiaeast, etc.
 
-# Set environment name
+# Set environment name (optional, defaults to "dev")
 pulumi config set environment dev
 
-# Set your existing Azure OpenAI resource name and resource group
-pulumi config set openaiResourceName your-openai-resource-name
-pulumi config set openaiResourceGroup your-openai-resource-group
+# Optional: Deploy GPT-4o for higher quality (default: false)
+pulumi config set deployGpt4o true
+
+# Optional: Skip GPT-4o-mini if you only want GPT-4o (default: true)
+pulumi config set deployGpt4oMini false
+
+# Optional: Set model capacities in thousands of TPM
+pulumi config set gpt4oMiniCapacity 50  # Default: 50
+pulumi config set gpt4oCapacity 20      # Default: 20
 ```
 
 ### 5. Preview and Deploy
@@ -107,15 +126,17 @@ After deployment, retrieve the outputs:
 ```bash
 # View all outputs
 pulumi stack output
-# or
-npm run output
 
-# Get specific values
+# Get specific values for .env file
+pulumi stack output openaiEndpoint
+pulumi stack output openaiApiKey --show-secrets
+pulumi stack output gpt4oMiniDeploymentName
+pulumi stack output gpt4oDeploymentName  # If you deployed GPT-4o
 pulumi stack output storageAccountName
-pulumi stack output inputContainerName
-pulumi stack output servicePrincipalClientId
-pulumi stack output servicePrincipalClientSecret --show-secrets
 pulumi stack output storageConnectionString --show-secrets
+pulumi stack output servicePrincipalClientId
+pulumi stack output servicePrincipalTenantId
+pulumi stack output servicePrincipalClientSecret --show-secrets
 ```
 
 ### Update Environment Variables
@@ -132,17 +153,23 @@ cd ..
 **Manual**: Add these to your `.env` file in the repository root:
 
 ```bash
-# Azure Storage for batch processing
-AZURE_STORAGE_ACCOUNT_NAME=$(pulumi stack output storageAccountName)
-AZURE_STORAGE_ACCOUNT_KEY=$(pulumi stack output storageAccountKey --show-secrets)
-AZURE_STORAGE_CONNECTION_STRING=$(pulumi stack output storageConnectionString --show-secrets)
-AZURE_BATCH_INPUT_CONTAINER=$(pulumi stack output inputContainerName)
-AZURE_BATCH_OUTPUT_CONTAINER=$(pulumi stack output outputContainerName)
+# Azure OpenAI
+AZURE_OPENAI_ENDPOINT="$(pulumi stack output openaiEndpoint)"
+AZURE_OPENAI_API_KEY="$(pulumi stack output openaiApiKey --show-secrets)"
+AZURE_OPENAI_API_VERSION="2024-10-01-preview"
+AZURE_OPENAI_GPT4O_MINI_DEPLOYMENT="$(pulumi stack output gpt4oMiniDeploymentName)"
+AZURE_OPENAI_GPT4O_DEPLOYMENT="$(pulumi stack output gpt4oDeploymentName)"  # If deployed
 
-# Service Principal for authentication (alternative to storage key)
-AZURE_TENANT_ID=$(pulumi stack output servicePrincipalTenantId)
-AZURE_CLIENT_ID=$(pulumi stack output servicePrincipalClientId)
-AZURE_CLIENT_SECRET=$(pulumi stack output servicePrincipalClientSecret --show-secrets)
+# Azure Storage for batch processing
+AZURE_STORAGE_ACCOUNT_NAME="$(pulumi stack output storageAccountName)"
+AZURE_STORAGE_CONNECTION_STRING="$(pulumi stack output storageConnectionString --show-secrets)"
+AZURE_BATCH_INPUT_CONTAINER="batch-input"
+AZURE_BATCH_OUTPUT_CONTAINER="batch-output"
+
+# Service Principal for authentication
+AZURE_TENANT_ID="$(pulumi stack output servicePrincipalTenantId)"
+AZURE_CLIENT_ID="$(pulumi stack output servicePrincipalClientId)"
+AZURE_CLIENT_SECRET="$(pulumi stack output servicePrincipalClientSecret --show-secrets)"
 ```
 
 ## Authentication Options

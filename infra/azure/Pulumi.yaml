@@ -4,6 +4,4 @@ description: Azure infrastructure for Legal-AI OpenAI batch processing
 
 config:
   azure-native:location:
-    # Recommended: eastasia (Hong Kong) for lowest latency
-    # Alternative: southeastasia (Singapore) for better availability
-    default: eastasia
+    value: eastus

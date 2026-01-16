@@ -68,11 +68,21 @@ This will:
 
 ### Azure Variables
 
+**Azure OpenAI:**
+- `AZURE_OPENAI_ENDPOINT` - Azure OpenAI endpoint URL
+- `AZURE_OPENAI_API_KEY` - Azure OpenAI API key
+- `AZURE_OPENAI_GPT4O_MINI_DEPLOYMENT` - GPT-4o-mini deployment name
+- `AZURE_OPENAI_GPT4O_DEPLOYMENT` - GPT-4o deployment name
+- `AZURE_OPENAI_API_VERSION` - API version (default: 2024-10-01-preview)
+
+**Azure Storage:**
 - `AZURE_STORAGE_ACCOUNT_NAME` - Storage account name
 - `AZURE_STORAGE_ACCOUNT_KEY` - Storage account key
 - `AZURE_STORAGE_CONNECTION_STRING` - Full connection string
 - `AZURE_BATCH_INPUT_CONTAINER` - Blob container for inputs
 - `AZURE_BATCH_OUTPUT_CONTAINER` - Blob container for outputs
+
+**Service Principal:**
 - `AZURE_TENANT_ID` - Azure AD tenant ID
 - `AZURE_CLIENT_ID` - Service principal client ID
 - `AZURE_CLIENT_SECRET` - Service principal secret
@@ -85,10 +95,6 @@ The following must be set manually in your `.env` file:
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_KEY`
 - `SUPABASE_DB_URL`
-- `AZURE_OPENAI_ENDPOINT`
-- `AZURE_OPENAI_API_KEY`
-- `AZURE_OPENAI_API_VERSION`
-- `AZURE_OPENAI_EMBED_DEPLOYMENT`
 - Other application-specific settings
 
 ## Workflow

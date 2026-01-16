@@ -4,4 +4,4 @@ description: AWS infrastructure for Legal-AI Bedrock batch processing
 
 config:
   aws:region:
-    value: ap-southeast-1
+    value: us-east-1
