@@ -5,12 +5,29 @@ import type {
   CaseDetail,
   LegislationDetail,
 } from "@/types";
+import { createClient } from "@/lib/supabase/client";
+
+async function getAuthHeaders(): Promise<HeadersInit> {
+  const supabase = createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session?.access_token) {
+    throw new Error("Not authenticated");
+  }
+  
+  return {
+    "Authorization": `Bearer ${session.access_token}`,
+  };
+}
 
 export async function search(request: SearchRequest): Promise<SearchResponse> {
+  const authHeaders = await getAuthHeaders();
+  
   const response = await fetch("/api/search", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders,
     },
     body: JSON.stringify(request),
   });
@@ -27,12 +44,16 @@ export async function getSuggestions(
   query: string,
   type?: "cases" | "legislation" | "all"
 ): Promise<SuggestionsResponse> {
+  const authHeaders = await getAuthHeaders();
+  
   const params = new URLSearchParams({ q: query });
   if (type) {
     params.set("type", type);
   }
 
-  const response = await fetch(`/api/suggestions?${params.toString()}`);
+  const response = await fetch(`/api/suggestions?${params.toString()}`, {
+    headers: authHeaders,
+  });
 
   if (!response.ok) {
     const error = await response.json();
@@ -43,7 +64,11 @@ export async function getSuggestions(
 }
 
 export async function getCaseDetail(id: string): Promise<CaseDetail> {
-  const response = await fetch(`/api/cases/${id}`);
+  const authHeaders = await getAuthHeaders();
+  
+  const response = await fetch(`/api/cases/${id}`, {
+    headers: authHeaders,
+  });
 
   if (!response.ok) {
     const error = await response.json();
@@ -56,7 +81,11 @@ export async function getCaseDetail(id: string): Promise<CaseDetail> {
 export async function getLegislationDetail(
   id: string
 ): Promise<LegislationDetail> {
-  const response = await fetch(`/api/legislation/${id}`);
+  const authHeaders = await getAuthHeaders();
+  
+  const response = await fetch(`/api/legislation/${id}`, {
+    headers: authHeaders,
+  });
 
   if (!response.ok) {
     const error = await response.json();

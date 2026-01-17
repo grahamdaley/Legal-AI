@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
-import { badRequest, notFound, serverError } from "../_shared/errors.ts";
-import { getSupabaseClient } from "../_shared/db.ts";
+import { badRequest, notFound, serverError, unauthorized } from "../_shared/errors.ts";
+import { getSupabaseClient, getSupabaseClientWithAuth } from "../_shared/db.ts";
 
 interface CaseDetailResponse {
   id: string;
@@ -30,6 +30,19 @@ serve(async (req: Request) => {
 
   if (req.method !== "GET") {
     return badRequest("Method not allowed. Use GET.");
+  }
+
+  // Require authentication
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return unauthorized("Authentication required");
+  }
+
+  // Verify the user is authenticated
+  const userClient = getSupabaseClientWithAuth(authHeader);
+  const { data: { user }, error: authError } = await userClient.auth.getUser();
+  if (authError || !user) {
+    return unauthorized("Invalid or expired token");
   }
 
   try {

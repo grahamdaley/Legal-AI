@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
-import { badRequest, serverError } from "../_shared/errors.ts";
-import { getSupabaseClient } from "../_shared/db.ts";
+import { badRequest, serverError, unauthorized } from "../_shared/errors.ts";
+import { getSupabaseClient, getSupabaseClientWithAuth } from "../_shared/db.ts";
 import { generateEmbedding } from "../_shared/bedrock.ts";
 import type { SearchRequest, SearchResponse, CaseResult, LegislationResult, SearchResult } from "./types.ts";
 
@@ -15,6 +15,19 @@ serve(async (req: Request) => {
 
   if (req.method !== "POST") {
     return badRequest("Method not allowed. Use POST.");
+  }
+
+  // Require authentication
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return unauthorized("Authentication required");
+  }
+
+  // Verify the user is authenticated
+  const userClient = getSupabaseClientWithAuth(authHeader);
+  const { data: { user }, error: authError } = await userClient.auth.getUser();
+  if (authError || !user) {
+    return unauthorized("Invalid or expired token");
   }
 
   const startTime = performance.now();

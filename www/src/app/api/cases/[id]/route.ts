@@ -7,9 +7,21 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: { message: "Authentication required" } },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
 
-    const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/cases/${id}`);
+    const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/cases/${id}`, {
+      headers: {
+        "Authorization": authHeader,
+      },
+    });
 
     const data = await response.json();
 

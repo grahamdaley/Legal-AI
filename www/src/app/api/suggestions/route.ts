@@ -4,11 +4,24 @@ const SUPABASE_FUNCTIONS_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function GET(request: NextRequest) {
   try {
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: { message: "Authentication required" } },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const queryString = searchParams.toString();
 
     const response = await fetch(
-      `${SUPABASE_FUNCTIONS_URL}/suggestions?${queryString}`
+      `${SUPABASE_FUNCTIONS_URL}/suggestions?${queryString}`,
+      {
+        headers: {
+          "Authorization": authHeader,
+        },
+      }
     );
 
     const data = await response.json();
