@@ -1,13 +1,6 @@
-import { Suspense } from "react";
 import Link from "next/link";
-import { Scale, Search, BookOpen, Gavel } from "lucide-react";
+import { Scale, Search, BookOpen, Gavel, Shield, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SearchBar } from "@/components/search/search-bar";
-import { Skeleton } from "@/components/ui/skeleton";
-
-function SearchBarFallback() {
-  return <Skeleton className="h-14 w-full" />;
-}
 
 export default function Home() {
   return (
@@ -25,23 +18,15 @@ export default function Home() {
           legislative documents with semantic understanding.
         </p>
 
-        <div className="w-full max-w-2xl mt-4">
-          <Suspense fallback={<SearchBarFallback />}>
-            <SearchBar size="large" autoFocus />
-          </Suspense>
-        </div>
-
         <div className="flex flex-wrap justify-center gap-4 mt-8">
-          <Link href="/search?type=cases">
-            <Button variant="outline" size="lg" className="gap-2">
-              <Gavel className="h-4 w-4" />
-              Browse Cases
+          <Link href="/login">
+            <Button size="lg" className="gap-2">
+              Sign in to get started
             </Button>
           </Link>
-          <Link href="/search?type=legislation">
+          <Link href="/signup">
             <Button variant="outline" size="lg" className="gap-2">
-              <BookOpen className="h-4 w-4" />
-              Browse Legislation
+              Create an account
             </Button>
           </Link>
         </div>
@@ -78,6 +63,49 @@ export default function Home() {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="border-t">
+        <div className="container py-16">
+          <h2 className="text-2xl font-semibold text-center mb-8">
+            Why Choose Legal AI?
+          </h2>
+          <div className="grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
+            <div className="flex gap-4 p-6">
+              <Shield className="h-8 w-8 text-primary flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold mb-2">Secure & Private</h3>
+                <p className="text-sm text-muted-foreground">
+                  Your research is protected. All searches and saved items are
+                  private to your account.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4 p-6">
+              <FolderOpen className="h-8 w-8 text-primary flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold mb-2">Organize Your Research</h3>
+                <p className="text-sm text-muted-foreground">
+                  Create collections to save and organize cases and legislation
+                  for your matters.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t bg-primary text-primary-foreground">
+        <div className="container py-12 text-center">
+          <h2 className="text-xl font-semibold mb-4">
+            Ready to streamline your legal research?
+          </h2>
+          <Link href="/signup">
+            <Button size="lg" variant="secondary">
+              Get started for free
+            </Button>
+          </Link>
         </div>
       </section>
     </div>

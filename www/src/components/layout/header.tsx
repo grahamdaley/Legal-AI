@@ -51,15 +51,15 @@ export function Header() {
           <span className="font-bold">Legal AI</span>
         </Link>
 
-        <nav className="flex items-center space-x-6 ml-6">
-          <Link
-            href="/search"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary flex items-center gap-1"
-          >
-            <Search className="h-4 w-4" />
-            Search
-          </Link>
-          {user && (
+        {user && (
+          <nav className="flex items-center space-x-6 ml-6">
+            <Link
+              href="/search"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary flex items-center gap-1"
+            >
+              <Search className="h-4 w-4" />
+              Search
+            </Link>
             <Link
               href="/collections"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary flex items-center gap-1"
@@ -67,8 +67,8 @@ export function Header() {
               <FolderOpen className="h-4 w-4" />
               Collections
             </Link>
-          )}
-        </nav>
+          </nav>
+        )}
 
         <div className="flex flex-1 items-center justify-end space-x-2">
           {user ? (
