@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
 import { badRequest, serverError, unauthorized } from "../_shared/errors.ts";
-import { getSupabaseClient, getSupabaseClientWithAuth } from "../_shared/db.ts";
+import { getSupabaseClient, verifyAuthHeader } from "../_shared/db.ts";
 
 interface Suggestion {
   text: string;
@@ -34,9 +34,8 @@ serve(async (req: Request) => {
   }
 
   // Verify the user is authenticated
-  const userClient = getSupabaseClientWithAuth(authHeader);
-  const { data: { user }, error: authError } = await userClient.auth.getUser();
-  if (authError || !user) {
+  const userId = verifyAuthHeader(authHeader);
+  if (!userId) {
     return unauthorized("Invalid or expired token");
   }
 

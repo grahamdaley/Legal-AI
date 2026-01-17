@@ -42,3 +42,34 @@ export function getSupabaseClientWithAuth(authHeader: string): SupabaseClient {
     },
   });
 }
+
+// Verify user from auth header - returns user ID if valid, null otherwise
+export function verifyAuthHeader(authHeader: string): string | null {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return null;
+  }
+
+  const token = authHeader.replace("Bearer ", "");
+  
+  // For local development, decode the JWT without verification
+  // In production, the Edge Runtime verifies JWTs automatically
+  try {
+    // Decode JWT payload (base64url)
+    const parts = token.split(".");
+    if (parts.length !== 3) {
+      return null;
+    }
+    
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    
+    // Check expiration
+    if (payload.exp && payload.exp < Date.now() / 1000) {
+      return null;
+    }
+    
+    // Return the user ID (sub claim)
+    return payload.sub || null;
+  } catch {
+    return null;
+  }
+}

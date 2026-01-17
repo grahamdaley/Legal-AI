@@ -12,7 +12,8 @@ async function getAuthHeaders(): Promise<HeadersInit> {
   const { data: { session } } = await supabase.auth.getSession();
   
   if (!session?.access_token) {
-    throw new Error("Not authenticated");
+    // Return empty headers if not authenticated - let the API return 401
+    return {};
   }
   
   return {
