@@ -35,24 +35,27 @@ def _estimate_tokens(text: str) -> int:
     return len(text) // 3
 
 
-def _truncate_to_token_limit(text: str, max_tokens: int = 6000) -> str:
-    """Truncate text to fit within token limit.
-    
-    Uses character-based truncation with conservative token estimation.
-    Titan model has 8192 token limit; we use 6000 max to be safe.
-    Keeps max_tokens estimate while providing a safety margin.
+def _truncate_to_token_limit(text: str, max_tokens: int = 4000) -> str:
+    """Truncate text to fit within a very conservative token limit.
+
+    We *do not* try to estimate true tokens here because the Titan tokenizer can
+    be much more token-dense than typical "~4 chars per token" heuristics for
+    legal text. Instead, we assume **1 char ≈ 1 token** and cap the number of
+    characters directly. This guarantees we stay well below the 8192-token
+    model limit even in worst-case tokenization.
     """
-    # Use more conservative ratio: 3 chars per token instead of 4
-    max_chars = max_tokens * 3
+
+    # Hard cap: 1 character per "token" for safety.
+    max_chars = max_tokens
     if len(text) <= max_chars:
         return text
-    
+
     # Truncate at character boundary, then at word boundary if possible
     truncated = text[:max_chars]
-    last_space = truncated.rfind(' ')
+    last_space = truncated.rfind(" ")
     if last_space > max_chars * 0.8:  # Only use space break if reasonably close
         truncated = truncated[:last_space]
-    
+
     return truncated.rstrip()
 
 
@@ -104,10 +107,10 @@ class BedrockCohereBackend(EmbeddingBackend):
         client = self._client()
 
         async def _one(text: str) -> List[float]:
-            # Truncate text to safe token limit before sending to API
-            # The model has 8192 token limit, we use 7500 to be safe
+            # Truncate text aggressively before sending to Titan.
+            # Titan has an 8192 token limit; we cap at ~4000 "tokens" using a
+            # 1 char ≈ 1 token heuristic to stay well under the hard limit.
             safe_text = _truncate_to_token_limit(text, max_tokens=4000)
-            
             body = json.dumps(
                 {
                     "inputText": safe_text,
@@ -160,9 +163,9 @@ class AzureOpenAIEmbeddingBackend(EmbeddingBackend):
         openai.default_headers = {"api-key": settings.azure_openai_api_key}
 
         async def _one(text: str) -> List[float]:
-            # Truncate text for Azure as well (8192 token limit)
+            # Truncate text for Azure as well (assume similar limits ~8k tokens).
+            # Use the same conservative 1 char ≈ 1 token heuristic.
             safe_text = _truncate_to_token_limit(text, max_tokens=4000)
-            
             # openai-python 1.x async client
             resp = await openai.embeddings.create(
                 input=safe_text,
