@@ -363,6 +363,6 @@ The code automatically routes to the correct model based on the `headnote_model`
 
 ## Questions?
 
-- See [INTERIM_MODELS.md](INTERIM_MODELS.md) for detailed model comparison
-- See [MODEL_RECOMMENDATIONS.md](MODEL_RECOMMENDATIONS.md) for long-term strategy
+- See [INTERIM_MODELS.md](interim_models.md) for detailed model comparison
+- See [MODEL_RECOMMENDATIONS.md](model_recommendations.md) for long-term strategy
 - Check [../infra/SYNC_ENV_GUIDE.md](../infra/SYNC_ENV_GUIDE.md) for environment sync details

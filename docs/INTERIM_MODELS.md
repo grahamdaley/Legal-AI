@@ -330,4 +330,4 @@ This gives you the best quality now and an easy migration path later!
 - **"Is GPT-4o good enough?"** Yes! It's excellent for legal text and structured outputs
 - **"Should I use Titan to save money?"** Try GPT-4o first for quality, switch to Titan if budget-constrained
 
-See [MODEL_RECOMMENDATIONS.md](MODEL_RECOMMENDATIONS.md) for the long-term strategy once Claude is available.
+See [MODEL_RECOMMENDATIONS.md](model_recommendations.md) for the long-term strategy once Claude is available.
