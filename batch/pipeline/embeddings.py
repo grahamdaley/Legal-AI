@@ -25,6 +25,37 @@ except Exception:  # pragma: no cover - optional dependency
     openai = None
 
 
+def _estimate_tokens(text: str) -> int:
+    """Rough token estimation for Bedrock models.
+    
+    Uses a more conservative heuristic: ~3 characters per token on average.
+    Legal text with long words and references tends to use more tokens.
+    This is approximate but helps us avoid hitting hard token limits.
+    """
+    return len(text) // 3
+
+
+def _truncate_to_token_limit(text: str, max_tokens: int = 6000) -> str:
+    """Truncate text to fit within token limit.
+    
+    Uses character-based truncation with conservative token estimation.
+    Titan model has 8192 token limit; we use 6000 max to be safe.
+    Keeps max_tokens estimate while providing a safety margin.
+    """
+    # Use more conservative ratio: 3 chars per token instead of 4
+    max_chars = max_tokens * 3
+    if len(text) <= max_chars:
+        return text
+    
+    # Truncate at character boundary, then at word boundary if possible
+    truncated = text[:max_chars]
+    last_space = truncated.rfind(' ')
+    if last_space > max_chars * 0.8:  # Only use space break if reasonably close
+        truncated = truncated[:last_space]
+    
+    return truncated.rstrip()
+
+
 @dataclass
 class EmbeddingResult:
     """Single embedding for a chunk of text."""
@@ -73,9 +104,13 @@ class BedrockCohereBackend(EmbeddingBackend):
         client = self._client()
 
         async def _one(text: str) -> List[float]:
+            # Truncate text to safe token limit before sending to API
+            # The model has 8192 token limit, we use 7500 to be safe
+            safe_text = _truncate_to_token_limit(text, max_tokens=4000)
+            
             body = json.dumps(
                 {
-                    "inputText": text,
+                    "inputText": safe_text,
                     "dimensions": 1024,
                     "normalize": True,
                 }
@@ -125,9 +160,12 @@ class AzureOpenAIEmbeddingBackend(EmbeddingBackend):
         openai.default_headers = {"api-key": settings.azure_openai_api_key}
 
         async def _one(text: str) -> List[float]:
+            # Truncate text for Azure as well (8192 token limit)
+            safe_text = _truncate_to_token_limit(text, max_tokens=4000)
+            
             # openai-python 1.x async client
             resp = await openai.embeddings.create(
-                input=text,
+                input=safe_text,
                 model=self.deployment,
                 dimensions=1536,  # Reduced from default 3072 for pgvector compatibility
             )
@@ -300,7 +338,7 @@ async def _insert_case_embeddings(
             e.chunk_index,
             e.chunk_type,
             e.text,
-            e.embedding,
+            json.dumps(e.embedding),
         )
         for e in embeddings
     ]
@@ -343,7 +381,7 @@ async def _insert_section_embeddings(
             e.chunk_index,
             e.chunk_type,
             e.text,
-            e.embedding,
+            json.dumps(e.embedding),
         )
         for e in embeddings
     ]

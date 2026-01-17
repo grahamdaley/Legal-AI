@@ -11,7 +11,7 @@ from typing import Iterable, List, Optional
 import re
 
 
-PARA_MARKER_RE = re.compile(r"^\s*(\[\d+\]|\(\d+\)|\d+\.)\s+")
+PARA_MARKER_RE = re.compile(r"^\s*(\[\d+\]|(\d+)|\\d+\.)\s+")
 
 
 @dataclass
@@ -78,7 +78,7 @@ def _guess_paragraph_number(para: str) -> Optional[int]:
     m = PARA_MARKER_RE.match(para)
     if not m:
         return None
-    raw = m.group(1).strip("[](). ")
+    raw = m.group(1).strip("[]().")
     try:
         return int(raw)
     except ValueError:
@@ -88,13 +88,15 @@ def _guess_paragraph_number(para: str) -> Optional[int]:
 def _group_paragraphs_into_chunks(
     paragraphs: List[str],
     *,
-    max_chars: int = 6000,
+    max_chars: int = 2000,
     overlap_paras: int = 2,
 ) -> List[List[str]]:
     """Group paragraphs into chunks by character length with paragraph overlap.
 
     - Never splits a paragraph.
     - Uses whole-paragraph overlap between successive chunks.
+    - Reduced from 6000 to 2000 chars to stay safely under token limits.
+      (Token limit is ~8192; 2000 chars ≈ ~1000 tokens, providing safety margin)
     """
 
     chunks: List[List[str]] = []
@@ -127,12 +129,12 @@ def chunk_case_text(case_id: str, full_text: str) -> List[Chunk]:
 
     This is heuristic and may be refined over time; for now we:
     - Split into paragraphs.
-    - Group paragraphs by character budget.
+    - Group paragraphs by character budget (2000 chars max).
     - Attempt to infer a rough chunk_type based on position.
     """
 
     paragraphs = _split_into_paragraphs(full_text)
-    para_chunks = _group_paragraphs_into_chunks(paragraphs)
+    para_chunks = _group_paragraphs_into_chunks(paragraphs, max_chars=2000)
     chunks: List[Chunk] = []
 
     total = len(para_chunks)
@@ -180,7 +182,7 @@ def chunk_legislation_section(
     if not text:
         return []
 
-    if len(text) <= 6000:
+    if len(text) <= 2000:
         return [
             Chunk(
                 doc_type="legislation",
@@ -195,7 +197,7 @@ def chunk_legislation_section(
 
     # For long sections, split on blank lines but keep section_path
     paras = [p for p in text.split("\n\n") if p.strip()]
-    para_chunks = _group_paragraphs_into_chunks(paras, max_chars=6000, overlap_paras=1)
+    para_chunks = _group_paragraphs_into_chunks(paras, max_chars=2000, overlap_paras=1)
 
     chunks: List[Chunk] = []
     for idx, group in enumerate(para_chunks):
