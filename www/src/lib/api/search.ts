@@ -6,10 +6,8 @@ import type {
   LegislationDetail,
 } from "@/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
 export async function search(request: SearchRequest): Promise<SearchResponse> {
-  const response = await fetch(`${API_URL}/search`, {
+  const response = await fetch("/api/search", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -34,7 +32,7 @@ export async function getSuggestions(
     params.set("type", type);
   }
 
-  const response = await fetch(`${API_URL}/suggestions?${params.toString()}`);
+  const response = await fetch(`/api/suggestions?${params.toString()}`);
 
   if (!response.ok) {
     const error = await response.json();
@@ -45,7 +43,7 @@ export async function getSuggestions(
 }
 
 export async function getCaseDetail(id: string): Promise<CaseDetail> {
-  const response = await fetch(`${API_URL}/cases/${id}`);
+  const response = await fetch(`/api/cases/${id}`);
 
   if (!response.ok) {
     const error = await response.json();
@@ -58,7 +56,7 @@ export async function getCaseDetail(id: string): Promise<CaseDetail> {
 export async function getLegislationDetail(
   id: string
 ): Promise<LegislationDetail> {
-  const response = await fetch(`${API_URL}/legislation/${id}`);
+  const response = await fetch(`/api/legislation/${id}`);
 
   if (!response.ok) {
     const error = await response.json();
