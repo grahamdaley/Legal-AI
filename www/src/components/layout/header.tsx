@@ -44,15 +44,15 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" role="banner">
       <div className="container mx-auto flex h-14 items-center">
-        <Link href="/" className="flex items-center space-x-2">
-          <Scale className="h-6 w-6" />
+        <Link href="/" className="flex items-center space-x-2" aria-label="Legal AI Home">
+          <Scale className="h-6 w-6" aria-hidden="true" />
           <span className="font-bold">Legal AI</span>
         </Link>
 
         {user && (
-          <nav className="flex items-center space-x-6 ml-6">
+          <nav className="flex items-center space-x-6 ml-6" aria-label="Main navigation">
             <Link
               href="/search"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary flex items-center gap-1"

@@ -1,0 +1,8 @@
+# Legal AI - Robots.txt
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /collections/
+
+# Sitemap
+Sitemap: https://legalai.hk/sitemap.xml
