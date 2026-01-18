@@ -116,7 +116,7 @@ const gpt4oMiniBatchDeployment = deployGpt4oMini
           },
           sku: {
               name: "GlobalBatch",
-              capacity: 500, // 500K TPM (tokens per minute) for batch - allows ~110 cases per batch
+              capacity: 2000, // 2000K TPM (tokens per minute) for batch - allows ~400 cases per batch
           },
       })
     : undefined;
