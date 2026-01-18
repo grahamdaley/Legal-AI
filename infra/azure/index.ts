@@ -101,6 +101,26 @@ const gpt4oMiniDeployment = deployGpt4oMini
       })
     : undefined;
 
+// Deploy GPT-4o-mini GlobalBatch model for batch processing
+const gpt4oMiniBatchDeployment = deployGpt4oMini
+    ? new azure.cognitiveservices.Deployment(`${projectName}-gpt4omini-batch-deployment`, {
+          deploymentName: "gpt-4o-mini-batch",
+          accountName: openaiAccount.name,
+          resourceGroupName: resourceGroup.name,
+          properties: {
+              model: {
+                  format: "OpenAI",
+                  name: "gpt-4o-mini",
+                  version: "2024-07-18",
+              },
+          },
+          sku: {
+              name: "GlobalBatch",
+              capacity: 250, // 250K TPM (tokens per minute) for batch
+          },
+      })
+    : undefined;
+
 // Deploy GPT-5 mini model (default)
 const gpt5MiniDeployment = deployGpt5Mini
     ? new azure.cognitiveservices.Deployment(`${projectName}-gpt5mini-deployment`, {
@@ -269,4 +289,5 @@ export const openaiApiKey = pulumi.secret(
 );
 export const gpt4oDeploymentName = gpt4oDeployment?.name || pulumi.output("gpt-4o");
 export const gpt4oMiniDeploymentName = gpt4oMiniDeployment?.name || pulumi.output("gpt-4o-mini");
+export const gpt4oMiniBatchDeploymentName = gpt4oMiniBatchDeployment?.name || pulumi.output("gpt-4o-mini-batch");
 export const gpt5MiniDeploymentName = gpt5MiniDeployment?.name || pulumi.output("gpt-5-mini");
