@@ -3,6 +3,7 @@ dist/
 node_modules/
 playwright-report/
 supabase/.*/
+supabase/snippets/
 test-results/
 
 .DS_Store
@@ -18,3 +19,4 @@ __pycache__/
 batch/state/
 batch/output/
 batch/logs/
+batch/batch_output
