@@ -76,6 +76,67 @@ playwright install chromium
 
 Note: Scraping must respect the target sites’ access rules. See `docs/specification.md` for guidance.
 
+### 3a) Initial batch processing (embeddings + headnotes)
+
+These are the recommended **first-time backfill** jobs to populate:
+
+- `case_embeddings_cohere` (semantic search embeddings) via **AWS Bedrock Batch API**
+- `court_cases.headnote` via **Azure OpenAI Batch API**
+
+They are designed to be run from the `batch/` directory with your virtualenv active.
+
+#### Embeddings (AWS Bedrock Batch API)
+
+Required `.env` values:
+
+- `AWS_REGION`
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `BEDROCK_BATCH_INPUT_BUCKET`
+- `BEDROCK_BATCH_OUTPUT_BUCKET`
+- `BEDROCK_BATCH_ROLE_ARN`
+
+All-in-one (export, submit, wait, ingest):
+
+```bash
+cd batch
+python -m jobs.generate_embeddings_batch run --wait
+```
+
+Step-by-step (useful if you want to submit in one session and ingest later):
+
+```bash
+cd batch
+python -m jobs.generate_embeddings_batch export
+python -m jobs.generate_embeddings_batch status --job-arn <job_arn>
+python -m jobs.generate_embeddings_batch ingest --job-arn <job_arn>
+```
+
+#### Headnotes (Azure OpenAI Batch API)
+
+Required `.env` values:
+
+- `AZURE_OPENAI_ENDPOINT`
+- `AZURE_OPENAI_API_KEY`
+- `AZURE_OPENAI_API_VERSION` (defaults to `2024-10-01-preview`)
+- `AZURE_OPENAI_GPT4O_MINI_BATCH_DEPLOYMENT` (defaults to `gpt-4o-mini-batch`)
+
+All-in-one (export, submit, wait, ingest):
+
+```bash
+cd batch
+python -m jobs.generate_headnotes_batch run --wait
+```
+
+Step-by-step:
+
+```bash
+cd batch
+python -m jobs.generate_headnotes_batch export
+python -m jobs.generate_headnotes_batch status --batch-id <batch_id>
+python -m jobs.generate_headnotes_batch ingest --batch-id <batch_id>
+```
+
 ### 4) Run the web app
 
 ```bash
