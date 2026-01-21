@@ -37,6 +37,7 @@ from jobs.generate_headnotes_batch import (
     download_output_file,
     ingest_headnotes,
     BatchJobInfo,
+    _azure_openai_client,
 )
 
 logger = structlog.get_logger(__name__)
@@ -131,10 +132,17 @@ async def export_wave_batches(
     return batch_files
 
 
+@dataclass
+class WaveFiles:
+    """Tracks file IDs for a wave."""
+    input_file_ids: List[str]
+    output_file_ids: List[str]
+
+
 async def submit_wave(
     wave_num: int,
     batch_files: List[Path],
-) -> WaveStatus:
+) -> tuple[WaveStatus, WaveFiles]:
     """Submit all batches in a wave to Azure OpenAI.
     
     Args:
@@ -142,12 +150,13 @@ async def submit_wave(
         batch_files: List of JSONL files to submit
     
     Returns:
-        WaveStatus tracking this wave
+        Tuple of (WaveStatus, WaveFiles) for tracking and cleanup
     """
     log = logger.bind(wave=wave_num, num_batches=len(batch_files))
     log.info("Submitting wave")
     
     batch_ids = []
+    input_file_ids = []
     total_cases = 0
     
     for idx, batch_file in enumerate(batch_files, start=1):
@@ -155,6 +164,7 @@ async def submit_wave(
         
         # Upload file
         file_id = upload_batch_file(batch_file)
+        input_file_ids.append(file_id)
         
         # Submit batch job
         job_info = submit_batch_job(
@@ -174,12 +184,19 @@ async def submit_wave(
         # Small delay between submissions to avoid rate limits
         await asyncio.sleep(2)
     
-    return WaveStatus(
+    wave_status = WaveStatus(
         wave_num=wave_num,
         batch_ids=batch_ids,
         total_cases=total_cases,
         start_time=datetime.now(),
     )
+    
+    wave_files = WaveFiles(
+        input_file_ids=input_file_ids,
+        output_file_ids=[],
+    )
+    
+    return wave_status, wave_files
 
 
 async def monitor_wave(wave_status: WaveStatus, poll_interval: int = 30) -> WaveStatus:
@@ -241,11 +258,12 @@ async def monitor_wave(wave_status: WaveStatus, poll_interval: int = 30) -> Wave
     return wave_status
 
 
-async def ingest_wave(wave_status: WaveStatus, output_dir: Path) -> int:
+async def ingest_wave(wave_status: WaveStatus, wave_files: WaveFiles, output_dir: Path) -> int:
     """Download and ingest all completed batches in a wave.
     
     Args:
         wave_status: Wave with completed batches
+        wave_files: File IDs to track for cleanup
         output_dir: Directory for output files
     
     Returns:
@@ -263,6 +281,10 @@ async def ingest_wave(wave_status: WaveStatus, output_dir: Path) -> int:
             if info.status != "completed":
                 log.warning("Skipping non-completed batch", batch=idx, status=info.status)
                 continue
+            
+            # Track output file ID for cleanup
+            if info.output_file_id:
+                wave_files.output_file_ids.append(info.output_file_id)
             
             # Download output
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -346,14 +368,30 @@ async def run_parallel_pipeline(
                 break
             
             # Step 2: Submit wave
-            wave_status = await submit_wave(wave_num, batch_files)
+            wave_status, wave_files = await submit_wave(wave_num, batch_files)
             
             # Step 3: Monitor until complete
             wave_status = await monitor_wave(wave_status)
             
             # Step 4: Ingest results
-            ingested = await ingest_wave(wave_status, output_dir)
+            ingested = await ingest_wave(wave_status, wave_files, output_dir)
             total_ingested += ingested
+            
+            # Step 5: Cleanup files to avoid quota limits
+            try:
+                client = _azure_openai_client()
+                files_to_delete = wave_files.input_file_ids + wave_files.output_file_ids
+                log.info("Cleaning up wave files", num_files=len(files_to_delete))
+                
+                for file_id in files_to_delete:
+                    try:
+                        client.files.delete(file_id)
+                    except Exception as e:
+                        log.warning("Failed to delete file", file_id=file_id[:12], error=str(e))
+                
+                log.info("Wave cleanup complete")
+            except Exception as e:
+                log.error("Wave cleanup failed", error=str(e))
             
             # Progress update
             elapsed = (datetime.now() - start_time).total_seconds() / 60
