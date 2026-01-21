@@ -68,8 +68,8 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     normalize: true,
   });
 
-  const service = "bedrock-runtime";
-  const host = `${service}.${AWS_REGION}.amazonaws.com`;
+  const service = "bedrock";
+  const host = `bedrock-runtime.${AWS_REGION}.amazonaws.com`;
   const endpoint = `https://${host}/model/${EMBEDDING_MODEL}/invoke`;
   const method = "POST";
 
@@ -77,7 +77,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
   const dateStamp = amzDate.slice(0, 8);
 
-  const canonicalUri = `/model/${EMBEDDING_MODEL}/invoke`;
+  const canonicalUri = `/model/${encodeURIComponent(EMBEDDING_MODEL)}/invoke`;
   const canonicalQuerystring = "";
   const payloadHash = await sha256(body);
 

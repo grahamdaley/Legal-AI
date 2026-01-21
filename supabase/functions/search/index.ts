@@ -49,7 +49,9 @@ serve(async (req: Request) => {
     const semanticWeight = options.semanticWeight ?? DEFAULT_SEMANTIC_WEIGHT;
 
     const embeddingStart = performance.now();
+    console.log(`Generating embedding for query: "${query.substring(0, 100)}..."`);
     const embedding = await generateEmbedding(query);
+    console.log(`Generated embedding with ${embedding.length} dimensions, first few values: [${embedding.slice(0, 5).join(", ")}]`);
     const embeddingMs = performance.now() - embeddingStart;
 
     const supabase = getSupabaseClient();

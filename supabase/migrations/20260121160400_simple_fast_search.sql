@@ -1,0 +1,244 @@
+-- Simplified fast search using only chunk_index = 0 to leverage HNSW index efficiently
+-- This is a temporary pragmatic solution until we can optimize multi-chunk search
+
+-- =========================
+-- CASES: SEMANTIC SEARCH
+-- =========================
+CREATE OR REPLACE FUNCTION search_cases_semantic(
+    query_embedding VECTOR(1024),
+    match_count INT DEFAULT 20,
+    filter_court TEXT DEFAULT NULL,
+    filter_year_from INT DEFAULT NULL,
+    filter_year_to INT DEFAULT NULL
+)
+RETURNS TABLE (
+    id UUID,
+    neutral_citation TEXT,
+    case_name TEXT,
+    court_id UUID,
+    court_code TEXT,
+    decision_date DATE,
+    headnote TEXT,
+    similarity_score FLOAT
+)
+LANGUAGE sql
+STABLE
+AS $$
+SELECT 
+    cc.id,
+    cc.neutral_citation,
+    cc.case_name,
+    cc.court_id,
+    cc.court_code,
+    cc.decision_date,
+    cc.headnote,
+    (1 - (ce.embedding <=> query_embedding))::FLOAT AS similarity_score
+FROM case_embeddings_cohere ce
+JOIN court_cases cc ON cc.id = ce.case_id
+WHERE ce.embedding IS NOT NULL
+    AND ce.chunk_index = 0
+    AND (filter_court IS NULL OR cc.court_code = filter_court)
+    AND (filter_year_from IS NULL OR EXTRACT(YEAR FROM cc.decision_date) >= filter_year_from)
+    AND (filter_year_to IS NULL OR EXTRACT(YEAR FROM cc.decision_date) <= filter_year_to)
+ORDER BY ce.embedding <=> query_embedding
+LIMIT match_count;
+$$;
+
+-- =========================
+-- CASES: HYBRID SEARCH
+-- =========================
+CREATE OR REPLACE FUNCTION search_cases_hybrid(
+    query_text TEXT,
+    query_embedding VECTOR(1024),
+    match_count INT DEFAULT 20,
+    semantic_weight FLOAT DEFAULT 0.7,
+    filter_court TEXT DEFAULT NULL,
+    filter_year_from INT DEFAULT NULL,
+    filter_year_to INT DEFAULT NULL
+)
+RETURNS TABLE (
+    id UUID,
+    neutral_citation TEXT,
+    case_name TEXT,
+    court_id UUID,
+    court_code TEXT,
+    decision_date DATE,
+    headnote TEXT,
+    semantic_score FLOAT,
+    fts_score FLOAT,
+    combined_score FLOAT
+)
+LANGUAGE sql
+STABLE
+AS $$
+WITH sem AS (
+  SELECT 
+    ce.case_id,
+    (1 - (ce.embedding <=> query_embedding))::FLOAT AS sem_score
+  FROM case_embeddings_cohere ce
+  JOIN court_cases cc ON cc.id = ce.case_id
+  WHERE ce.embedding IS NOT NULL
+    AND ce.chunk_index = 0
+    AND (filter_court IS NULL OR cc.court_code = filter_court)
+    AND (filter_year_from IS NULL OR EXTRACT(YEAR FROM cc.decision_date) >= filter_year_from)
+    AND (filter_year_to IS NULL OR EXTRACT(YEAR FROM cc.decision_date) <= filter_year_to)
+  ORDER BY ce.embedding <=> query_embedding
+  LIMIT GREATEST(match_count * 3, 100)
+), fts AS (
+  SELECT 
+    cc.id AS case_id,
+    ts_rank_cd(
+      to_tsvector('english', COALESCE(cc.case_name, '') || ' ' || COALESCE(cc.headnote, '') || ' ' || COALESCE(cc.full_text, '')),
+      plainto_tsquery('english', query_text)
+    ) AS fts_raw
+  FROM court_cases cc
+  WHERE to_tsvector('english', COALESCE(cc.case_name, '') || ' ' || COALESCE(cc.headnote, '') || ' ' || COALESCE(cc.full_text, ''))
+        @@ plainto_tsquery('english', query_text)
+    AND (filter_court IS NULL OR cc.court_code = filter_court)
+    AND (filter_year_from IS NULL OR EXTRACT(YEAR FROM cc.decision_date) >= filter_year_from)
+    AND (filter_year_to IS NULL OR EXTRACT(YEAR FROM cc.decision_date) <= filter_year_to)
+  LIMIT GREATEST(match_count * 3, 100)
+), fts_norm AS (
+  SELECT 
+    case_id,
+    CASE WHEN MAX(fts_raw) OVER () = 0 THEN 0
+         ELSE fts_raw / NULLIF(MAX(fts_raw) OVER (), 0)
+    END AS fts_score
+  FROM fts
+)
+SELECT 
+  cc.id,
+  cc.neutral_citation,
+  cc.case_name,
+  cc.court_id,
+  cc.court_code,
+  cc.decision_date,
+  cc.headnote,
+  COALESCE(s.sem_score, 0.0)::FLOAT AS semantic_score,
+  COALESCE(f.fts_score, 0.0)::FLOAT AS fts_score,
+  (semantic_weight * COALESCE(s.sem_score, 0.0) + (1 - semantic_weight) * COALESCE(f.fts_score, 0.0))::FLOAT AS combined_score
+FROM court_cases cc
+LEFT JOIN sem s ON s.case_id = cc.id
+LEFT JOIN fts_norm f ON f.case_id = cc.id
+WHERE s.case_id IS NOT NULL OR f.case_id IS NOT NULL
+ORDER BY (semantic_weight * COALESCE(s.sem_score, 0.0) + (1 - semantic_weight) * COALESCE(f.fts_score, 0.0)) DESC
+LIMIT match_count;
+$$;
+
+-- =========================
+-- LEGISLATION: SEMANTIC SEARCH
+-- =========================
+CREATE OR REPLACE FUNCTION search_legislation_semantic(
+    query_embedding VECTOR(1024),
+    match_count INT DEFAULT 20,
+    filter_type TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+    section_id UUID,
+    legislation_id UUID,
+    chapter_number TEXT,
+    title_en TEXT,
+    section_number TEXT,
+    section_title TEXT,
+    content_snippet TEXT,
+    similarity_score FLOAT
+)
+LANGUAGE sql
+STABLE
+AS $$
+SELECT 
+    ls.id AS section_id,
+    l.id AS legislation_id,
+    l.chapter_number,
+    l.title_en,
+    ls.section_number,
+    ls.title AS section_title,
+    LEFT(ls.content, 500) AS content_snippet,
+    (1 - (le.embedding <=> query_embedding))::FLOAT AS similarity_score
+FROM legislation_embeddings_cohere le
+JOIN legislation_sections ls ON ls.id = le.section_id
+JOIN legislation l ON l.id = ls.legislation_id
+WHERE le.embedding IS NOT NULL
+    AND le.chunk_index = 0
+    AND (filter_type IS NULL OR l.type::TEXT = filter_type)
+ORDER BY le.embedding <=> query_embedding
+LIMIT match_count;
+$$;
+
+-- =========================
+-- LEGISLATION: HYBRID SEARCH
+-- =========================
+CREATE OR REPLACE FUNCTION search_legislation_hybrid(
+    query_text TEXT,
+    query_embedding VECTOR(1024),
+    match_count INT DEFAULT 20,
+    semantic_weight FLOAT DEFAULT 0.7,
+    filter_type TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+    section_id UUID,
+    legislation_id UUID,
+    chapter_number TEXT,
+    title_en TEXT,
+    section_number TEXT,
+    section_title TEXT,
+    content_snippet TEXT,
+    semantic_score FLOAT,
+    fts_score FLOAT,
+    combined_score FLOAT
+)
+LANGUAGE sql
+STABLE
+AS $$
+WITH sem AS (
+  SELECT 
+    le.section_id,
+    (1 - (le.embedding <=> query_embedding))::FLOAT AS sem_score
+  FROM legislation_embeddings_cohere le
+  JOIN legislation_sections ls ON ls.id = le.section_id
+  JOIN legislation l ON l.id = ls.legislation_id
+  WHERE le.embedding IS NOT NULL
+    AND le.chunk_index = 0
+    AND (filter_type IS NULL OR l.type::TEXT = filter_type)
+  ORDER BY le.embedding <=> query_embedding
+  LIMIT GREATEST(match_count * 3, 100)
+), fts AS (
+  SELECT 
+    ls.id AS section_id,
+    ts_rank_cd(
+      to_tsvector('english', COALESCE(ls.title, '') || ' ' || COALESCE(ls.content, '')),
+      plainto_tsquery('english', query_text)
+    ) AS fts_raw
+  FROM legislation_sections ls
+  JOIN legislation l ON l.id = ls.legislation_id
+  WHERE to_tsvector('english', COALESCE(ls.title, '') || ' ' || COALESCE(ls.content, ''))
+        @@ plainto_tsquery('english', query_text)
+    AND (filter_type IS NULL OR l.type::TEXT = filter_type)
+  LIMIT GREATEST(match_count * 3, 100)
+), fts_norm AS (
+  SELECT 
+    section_id,
+    CASE WHEN MAX(fts_raw) OVER () = 0 THEN 0
+         ELSE fts_raw / NULLIF(MAX(fts_raw) OVER (), 0)
+    END AS fts_score
+  FROM fts
+)
+SELECT 
+  ls.id AS section_id,
+  l.id AS legislation_id,
+  l.chapter_number,
+  l.title_en,
+  ls.section_number,
+  ls.title AS section_title,
+  LEFT(ls.content, 500) AS content_snippet,
+  COALESCE(s.sem_score, 0.0)::FLOAT AS semantic_score,
+  COALESCE(f.fts_score, 0.0)::FLOAT AS fts_score,
+  (semantic_weight * COALESCE(s.sem_score, 0.0) + (1 - semantic_weight) * COALESCE(f.fts_score, 0.0))::FLOAT AS combined_score
+FROM legislation_sections ls
+JOIN legislation l ON l.id = ls.legislation_id
+LEFT JOIN sem s ON s.section_id = ls.id
+LEFT JOIN fts_norm f ON f.section_id = ls.id
+WHERE s.section_id IS NOT NULL OR f.section_id IS NOT NULL
+ORDER BY (semantic_weight * COALESCE(s.sem_score, 0.0) + (1 - semantic_weight) * COALESCE(f.fts_score, 0.0)) DESC
+LIMIT match_count;
+$$;

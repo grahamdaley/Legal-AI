@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const SUPABASE_FUNCTIONS_URL = process.env.NEXT_PUBLIC_API_URL;
+const SUPABASE_FUNCTIONS_URL = process.env.SUPABASE_FUNCTIONS_ORIGIN || process.env.NEXT_PUBLIC_API_URL;
 
 export async function POST(request: NextRequest) {
   try {

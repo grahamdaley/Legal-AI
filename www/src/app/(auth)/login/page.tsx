@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
@@ -16,6 +16,20 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    const supabase = createClient();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        if (typeof window !== 'undefined') {
+          window.location.assign('/search');
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -23,19 +37,36 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
+      console.log('Login response:', { data, error });
+
       if (error) {
+        console.error('Login error:', error);
         setError(error.message);
         return;
       }
 
-      router.push("/search");
-      router.refresh();
-    } catch {
+      if (!data.session) {
+        console.error('No session returned');
+        setError("Login failed - no session created");
+        return;
+      }
+
+      console.log('Login successful, redirecting to /search');
+      // Ensure session is fully persisted before redirect
+      await supabase.auth.getSession();
+      // Force a full navigation so cookies are sent and middleware runs
+      if (typeof window !== 'undefined') {
+        window.location.assign('/search');
+        return;
+      }
+      router.push('/search');
+    } catch (err) {
+      console.error('Unexpected error:', err);
       setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);
