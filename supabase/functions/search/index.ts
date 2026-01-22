@@ -88,12 +88,23 @@ serve(async (req: Request) => {
         limit,
         offset
       );
-      results.push(...legResults.map((r) => ({ 
+      
+      // Deduplicate by legislation_id, keeping the highest-scoring section for each legislation
+      const seenLegislationIds = new Set<string>();
+      const dedupedLegResults = legResults.filter((r) => {
+        if (seenLegislationIds.has(r.legislation_id)) {
+          return false;
+        }
+        seenLegislationIds.add(r.legislation_id);
+        return true;
+      });
+      
+      results.push(...dedupedLegResults.map((r) => ({ 
         ...r, 
         id: r.legislation_id,
         result_type: "legislation" as const 
       })));
-      totalCount += legResults.length;
+      totalCount += dedupedLegResults.length;
     }
 
     if (searchType === "all") {
