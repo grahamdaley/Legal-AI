@@ -101,6 +101,7 @@ export interface CaseDetail {
 export interface CitedCase {
   id: string | null;
   citation_text: string;
+  cited_case_name: string | null;
   neutral_citation: string | null;
   case_name: string | null;
   court_code: string | null;

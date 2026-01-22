@@ -15,6 +15,13 @@ interface CaseContentProps {
 }
 
 function OutgoingCitationCard({ citation }: { citation: CitedCase }) {
+  // Display format: "Case Name [citation]" or just "[citation]" if no case name
+  const displayText = citation.cited_case_name 
+    ? `${citation.cited_case_name} ${citation.citation_text}`
+    : citation.is_in_database && citation.case_name
+      ? citation.case_name
+      : citation.citation_text;
+
   const content = (
     <Card className={citation.is_in_database ? "hover:bg-accent/50 transition-colors cursor-pointer" : "opacity-75"}>
       <CardContent className="py-3 px-4">
@@ -22,9 +29,7 @@ function OutgoingCitationCard({ citation }: { citation: CitedCase }) {
           <ArrowUpRight className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium line-clamp-1">
-              {citation.is_in_database && citation.case_name 
-                ? citation.case_name 
-                : citation.citation_text}
+              {displayText}
             </p>
             <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
               {citation.is_in_database ? (

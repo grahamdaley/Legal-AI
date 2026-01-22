@@ -210,23 +210,22 @@ async function getCollection(
 
   const enrichedItems = await Promise.all(
     (items || []).map(async (item: CollectionItem) => {
-      let itemDetails = null;
       if (item.item_type === "case") {
         const { data } = await supabase
           .from("court_cases")
           .select("id, neutral_citation, case_name, court_code, decision_date, headnote")
           .eq("id", item.item_id)
           .single();
-        itemDetails = data;
+        return { ...item, case: data, legislation: null };
       } else if (item.item_type === "legislation") {
         const { data } = await supabase
           .from("legislation")
           .select("id, chapter_number, title_en, type, status")
           .eq("id", item.item_id)
           .single();
-        itemDetails = data;
+        return { ...item, case: null, legislation: data };
       }
-      return { ...item, item_details: itemDetails };
+      return { ...item, case: null, legislation: null };
     })
   );
 

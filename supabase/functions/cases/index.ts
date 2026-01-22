@@ -25,6 +25,7 @@ interface CaseDetailResponse {
 interface CitedCase {
   id: string | null;
   citation_text: string;
+  cited_case_name: string | null;
   neutral_citation: string | null;
   case_name: string | null;
   court_code: string | null;
@@ -105,6 +106,7 @@ serve(async (req: Request) => {
         cited_cases: (citedCases || []).map((c: CitedCase) => ({
           id: c.id,
           citation_text: c.citation_text,
+          cited_case_name: c.cited_case_name,
           neutral_citation: c.neutral_citation,
           case_name: c.case_name,
           court_code: c.court_code,
