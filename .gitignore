@@ -14,7 +14,7 @@ test-results/
 
 *.log
 *.gz
-*.dump.sql
+*.dump
 
 __pycache__/
 *.pyc
