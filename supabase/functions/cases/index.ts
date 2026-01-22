@@ -22,6 +22,29 @@ interface CaseDetailResponse {
   pdf_url: string | null;
 }
 
+interface CitedCase {
+  id: string | null;
+  citation_text: string;
+  neutral_citation: string | null;
+  case_name: string | null;
+  court_code: string | null;
+  decision_date: string | null;
+  is_in_database: boolean;
+}
+
+interface CitingCase {
+  id: string;
+  neutral_citation: string | null;
+  case_name: string | null;
+  court_code: string | null;
+  decision_date: string | null;
+}
+
+interface CitationsResponse {
+  cited_cases: CitedCase[];
+  citing_cases: CitingCase[];
+}
+
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 serve(async (req: Request) => {
@@ -47,13 +70,60 @@ serve(async (req: Request) => {
   try {
     const url = new URL(req.url);
     const pathParts = url.pathname.split("/").filter(Boolean);
-    const caseId = pathParts[pathParts.length - 1];
+    
+    // Check if this is a citations request: /cases/{id}/citations
+    const isCitationsRequest = pathParts[pathParts.length - 1] === "citations";
+    const caseId = isCitationsRequest 
+      ? pathParts[pathParts.length - 2] 
+      : pathParts[pathParts.length - 1];
 
     if (!caseId || !UUID_REGEX.test(caseId)) {
       return badRequest("Invalid case ID. Must be a valid UUID.");
     }
 
     const supabase = getSupabaseClient();
+
+    // Handle citations request
+    if (isCitationsRequest) {
+      // Get cases cited BY this case
+      const { data: citedCases, error: citedError } = await supabase
+        .rpc("get_cited_cases", { p_case_id: caseId });
+
+      if (citedError) {
+        console.error("Error fetching cited cases:", citedError);
+      }
+
+      // Get cases that CITE this case
+      const { data: citingCases, error: citingError } = await supabase
+        .rpc("get_citing_cases", { p_case_id: caseId });
+
+      if (citingError) {
+        console.error("Error fetching citing cases:", citingError);
+      }
+
+      const response: CitationsResponse = {
+        cited_cases: (citedCases || []).map((c: CitedCase) => ({
+          id: c.id,
+          citation_text: c.citation_text,
+          neutral_citation: c.neutral_citation,
+          case_name: c.case_name,
+          court_code: c.court_code,
+          decision_date: c.decision_date,
+          is_in_database: c.is_in_database,
+        })),
+        citing_cases: (citingCases || []).map((c: CitingCase) => ({
+          id: c.id,
+          neutral_citation: c.neutral_citation,
+          case_name: c.case_name,
+          court_code: c.court_code,
+          decision_date: c.decision_date,
+        })),
+      };
+
+      return new Response(JSON.stringify(response), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const { data: caseData, error: caseError } = await supabase
       .from("court_cases")

@@ -98,6 +98,29 @@ export interface CaseDetail {
   pdf_url?: string;
 }
 
+export interface CitedCase {
+  id: string | null;
+  citation_text: string;
+  neutral_citation: string | null;
+  case_name: string | null;
+  court_code: string | null;
+  decision_date: string | null;
+  is_in_database: boolean;
+}
+
+export interface CitingCase {
+  id: string;
+  neutral_citation: string | null;
+  case_name: string | null;
+  court_code: string | null;
+  decision_date: string | null;
+}
+
+export interface CitationsResponse {
+  cited_cases: CitedCase[];
+  citing_cases: CitingCase[];
+}
+
 export interface LegislationDetail {
   id: string;
   chapter_number: string;

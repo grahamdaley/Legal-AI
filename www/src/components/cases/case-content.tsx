@@ -1,17 +1,114 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, BookOpen, Link2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
+import { FileText, BookOpen, Link2, ArrowUpRight, ArrowDownLeft, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import type { CaseDetail } from "@/types";
+import { Badge } from "@/components/ui/badge";
+import { getCaseCitations } from "@/lib/api/search";
+import type { CaseDetail, CitedCase, CitingCase } from "@/types";
 
 interface CaseContentProps {
   caseData: CaseDetail;
 }
 
+function OutgoingCitationCard({ citation }: { citation: CitedCase }) {
+  const content = (
+    <Card className={citation.is_in_database ? "hover:bg-accent/50 transition-colors cursor-pointer" : "opacity-75"}>
+      <CardContent className="py-3 px-4">
+        <div className="flex items-start gap-3">
+          <ArrowUpRight className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium line-clamp-1">
+              {citation.is_in_database && citation.case_name 
+                ? citation.case_name 
+                : citation.citation_text}
+            </p>
+            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+              {citation.is_in_database ? (
+                <>
+                  {citation.neutral_citation && (
+                    <span className="font-mono">{citation.neutral_citation}</span>
+                  )}
+                  {citation.court_code && (
+                    <Badge variant="outline" className="text-xs">
+                      {citation.court_code}
+                    </Badge>
+                  )}
+                  {citation.decision_date && (
+                    <span>
+                      {new Date(citation.decision_date).toLocaleDateString("en-GB", {
+                        year: "numeric",
+                      })}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <Badge variant="secondary" className="text-xs">
+                  Not in database
+                </Badge>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  if (citation.is_in_database && citation.id) {
+    return <Link href={`/cases/${citation.id}`}>{content}</Link>;
+  }
+
+  return content;
+}
+
+function IncomingCitationCard({ citation }: { citation: CitingCase }) {
+  return (
+    <Link href={`/cases/${citation.id}`}>
+      <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
+        <CardContent className="py-3 px-4">
+          <div className="flex items-start gap-3">
+            <ArrowDownLeft className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium line-clamp-1">
+                {citation.case_name || "Untitled Case"}
+              </p>
+              <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                {citation.neutral_citation && (
+                  <span className="font-mono">{citation.neutral_citation}</span>
+                )}
+                {citation.court_code && (
+                  <Badge variant="outline" className="text-xs">
+                    {citation.court_code}
+                  </Badge>
+                )}
+                {citation.decision_date && (
+                  <span>
+                    {new Date(citation.decision_date).toLocaleDateString("en-GB", {
+                      year: "numeric",
+                    })}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
 export function CaseContent({ caseData }: CaseContentProps) {
   const [activeTab, setActiveTab] = useState("summary");
+
+  const { data: citations, isLoading: citationsLoading } = useQuery({
+    queryKey: ["citations", caseData.id],
+    queryFn: () => getCaseCitations(caseData.id),
+    enabled: activeTab === "citations",
+    staleTime: 1000 * 60 * 60,
+  });
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -68,14 +165,57 @@ export function CaseContent({ caseData }: CaseContentProps) {
       </TabsContent>
 
       <TabsContent value="citations" className="mt-4">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground italic">
-              Citation network analysis coming soon. This feature will show
-              cases cited by this judgment and cases that cite this judgment.
-            </p>
-          </CardContent>
-        </Card>
+        {citationsLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <ArrowUpRight className="h-4 w-4" />
+                Cases Cited by This Judgment ({citations?.cited_cases?.length || 0})
+              </h3>
+              {citations?.cited_cases && citations.cited_cases.length > 0 ? (
+                <div className="space-y-2">
+                  {citations.cited_cases.map((citation, index) => (
+                    <OutgoingCitationCard key={citation.id || `cited-${index}`} citation={citation} />
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="py-4">
+                    <p className="text-sm text-muted-foreground italic">
+                      No citations found in this judgment.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <ArrowDownLeft className="h-4 w-4" />
+                Cases That Cite This Judgment ({citations?.citing_cases?.length || 0})
+              </h3>
+              {citations?.citing_cases && citations.citing_cases.length > 0 ? (
+                <div className="space-y-2">
+                  {citations.citing_cases.map((citation) => (
+                    <IncomingCitationCard key={citation.id} citation={citation} />
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="py-4">
+                    <p className="text-sm text-muted-foreground italic">
+                      No cases citing this judgment found yet.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        )}
       </TabsContent>
     </Tabs>
   );

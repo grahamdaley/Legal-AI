@@ -4,6 +4,7 @@ import type {
   SuggestionsResponse,
   CaseDetail,
   LegislationDetail,
+  CitationsResponse,
 } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 
@@ -91,6 +92,21 @@ export async function getLegislationDetail(
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error?.message || "Failed to get legislation details");
+  }
+
+  return response.json();
+}
+
+export async function getCaseCitations(id: string): Promise<CitationsResponse> {
+  const authHeaders = await getAuthHeaders();
+  
+  const response = await fetch(`/api/cases/${id}/citations`, {
+    headers: authHeaders,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || "Failed to get case citations");
   }
 
   return response.json();
