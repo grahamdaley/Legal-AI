@@ -21,9 +21,15 @@ class ParsedCitation:
     volume: Optional[int] = None  # For law reports like [2024] 1 AC 123
 
 
-# Hong Kong citation patterns
+# Hong Kong neutral citation patterns (e.g., [2024] HKCFI 123)
 HK_CITATION_PATTERN = re.compile(
     r"\[(\d{4})\]\s*(HK(?:CFA|CA|CFI|DC|FC|LT|LAB|SCT|EC|MC|HKEC))\s*(\d+)",
+    re.IGNORECASE,
+)
+
+# Hong Kong Law Reports patterns (e.g., [1996] 2 HKLR 401, [2000] 3 HKCFAR 125)
+HK_LAW_REPORTS_PATTERN = re.compile(
+    r"\[(\d{4})\]\s*(\d+)\s*(HKLR|HKLRD|HKCFAR|HKC)\s*(\d+)",
     re.IGNORECASE,
 )
 
@@ -86,6 +92,43 @@ def parse_hk_citations(text: str) -> list[ParsedCitation]:
                     court=match.group(2).upper(),
                     number=int(match.group(3)),
                     jurisdiction="HK",
+                )
+            )
+
+    return citations
+
+
+def parse_hk_law_reports(text: str) -> list[ParsedCitation]:
+    """
+    Extract Hong Kong Law Reports citations from text.
+    
+    Formats:
+        - HKLR: Hong Kong Law Reports (e.g., [1996] 2 HKLR 401)
+        - HKLRD: Hong Kong Law Reports & Digest (e.g., [2010] 1 HKLRD 100)
+        - HKCFAR: Hong Kong Court of Final Appeal Reports (e.g., [2000] 3 HKCFAR 125)
+        - HKC: Hong Kong Cases (e.g., [1995] 1 HKC 200)
+    
+    Args:
+        text: Text to search for citations
+        
+    Returns:
+        List of parsed citations
+    """
+    citations = []
+    seen = set()
+
+    for match in HK_LAW_REPORTS_PATTERN.finditer(text):
+        full = match.group(0)
+        if full not in seen:
+            seen.add(full)
+            citations.append(
+                ParsedCitation(
+                    full_citation=full,
+                    year=int(match.group(1)),
+                    court=match.group(3).upper(),
+                    number=int(match.group(4)),
+                    jurisdiction="HK",
+                    volume=int(match.group(2)),
                 )
             )
 
@@ -167,6 +210,7 @@ def extract_all_citations(text: str) -> list[ParsedCitation]:
     """
     citations = []
     citations.extend(parse_hk_citations(text))
+    citations.extend(parse_hk_law_reports(text))
     citations.extend(parse_uk_citations(text))
     citations.extend(parse_au_citations(text))
     return citations
