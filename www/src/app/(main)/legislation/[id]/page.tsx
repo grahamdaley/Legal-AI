@@ -1,9 +1,8 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,7 +43,16 @@ function LegislationDetailSkeleton() {
 
 export default function LegislationDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/search?type=legislation");
+    }
+  };
 
   const { data: legislation, isLoading, error } = useQuery<LegislationDetail>({
     queryKey: ["legislation", id],
@@ -60,12 +68,10 @@ export default function LegislationDetailPage() {
   if (error) {
     return (
       <div className="container py-6">
-        <Link href="/search">
-          <Button variant="ghost" size="sm" className="mb-6">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to search
-          </Button>
-        </Link>
+        <Button variant="ghost" size="sm" className="mb-6" onClick={handleBack}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to search
+        </Button>
         <div className="rounded-md bg-destructive/10 p-4 text-destructive">
           <p className="font-medium">Failed to load legislation</p>
           <p className="text-sm">{(error as Error).message}</p>
@@ -87,12 +93,10 @@ export default function LegislationDetailPage() {
 
   return (
     <div className="container py-6">
-      <Link href="/search?type=legislation">
-        <Button variant="ghost" size="sm" className="mb-6">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to search
-        </Button>
-      </Link>
+      <Button variant="ghost" size="sm" className="mb-6" onClick={handleBack}>
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to search
+      </Button>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
         <div className="space-y-6">
