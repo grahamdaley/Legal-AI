@@ -23,6 +23,8 @@ export interface CaseResult {
   court_code: string | null;
   decision_date: string | null;
   headnote: string | null;
+  chunk_index?: number;
+  chunk_text?: string | null;
   similarity_score?: number;
   semantic_score?: number;
   fts_score?: number;
@@ -40,6 +42,8 @@ export interface LegislationResult {
   section_number: string;
   section_title: string | null;
   content_snippet: string | null;
+  chunk_index?: number;
+  chunk_text?: string | null;
   similarity_score?: number;
   semantic_score?: number;
   fts_score?: number;

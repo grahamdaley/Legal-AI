@@ -1,6 +1,10 @@
 -- Fix legislation search functions to return type and status fields
 -- These fields are required by the frontend LegislationResult type
 
+-- Must DROP functions first because we're changing the return type
+DROP FUNCTION IF EXISTS search_legislation_semantic(VECTOR(1024), INT, TEXT);
+DROP FUNCTION IF EXISTS search_legislation_hybrid(TEXT, VECTOR(1024), INT, FLOAT, TEXT);
+
 -- =========================
 -- LEGISLATION: SEMANTIC SEARCH
 -- =========================

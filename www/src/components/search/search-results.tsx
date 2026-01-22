@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FileText, Scale, Calendar, Building } from "lucide-react";
+import { FileText, Scale, Calendar, Building, Quote } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,11 +59,21 @@ function CaseResultCard({ result }: { result: CaseResult }) {
               </span>
             )}
           </div>
-          {result.headnote && (
-            <p className="text-sm text-muted-foreground line-clamp-3">
+          {result.chunk_text ? (
+            <div className="mt-2 p-2 bg-muted/50 rounded-md border-l-2 border-primary/50">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                <Quote className="h-3 w-3" />
+                <span>Matched passage</span>
+              </div>
+              <p className="text-sm text-foreground/80 line-clamp-3 italic">
+                &ldquo;{result.chunk_text}&rdquo;
+              </p>
+            </div>
+          ) : result.headnote ? (
+            <p className="text-sm text-muted-foreground line-clamp-3 mt-2">
               {result.headnote}
             </p>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     </Link>
@@ -102,11 +112,24 @@ function LegislationResultCard({ result }: { result: LegislationResult }) {
               {result.status}
             </Badge>
           </div>
-          {result.title_zh && (
+          {result.chunk_text ? (
+            <div className="mt-2 p-2 bg-muted/50 rounded-md border-l-2 border-primary/50">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                <Quote className="h-3 w-3" />
+                <span>
+                  Matched passage
+                  {result.section_number && ` (§${result.section_number})`}
+                </span>
+              </div>
+              <p className="text-sm text-foreground/80 line-clamp-3 italic">
+                &ldquo;{result.chunk_text}&rdquo;
+              </p>
+            </div>
+          ) : result.title_zh ? (
             <p className="text-sm text-muted-foreground mt-2">
               {result.title_zh}
             </p>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     </Link>

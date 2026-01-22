@@ -30,6 +30,8 @@ export interface CaseResult {
   court_name?: string;
   decision_date: string;
   headnote?: string;
+  chunk_index?: number;
+  chunk_text?: string;
   similarity_score?: number;
   fts_score?: number;
   combined_score?: number;
@@ -42,6 +44,11 @@ export interface LegislationResult {
   title_zh?: string;
   type: string;
   status: string;
+  section_number?: string;
+  section_title?: string;
+  content_snippet?: string;
+  chunk_index?: number;
+  chunk_text?: string;
   similarity_score?: number;
   fts_score?: number;
   combined_score?: number;
