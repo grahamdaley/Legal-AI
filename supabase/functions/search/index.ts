@@ -88,7 +88,11 @@ serve(async (req: Request) => {
         limit,
         offset
       );
-      results.push(...legResults.map((r) => ({ ...r, result_type: "legislation" as const })));
+      results.push(...legResults.map((r) => ({ 
+        ...r, 
+        id: r.legislation_id,
+        result_type: "legislation" as const 
+      })));
       totalCount += legResults.length;
     }
 

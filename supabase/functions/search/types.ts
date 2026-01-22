@@ -34,6 +34,9 @@ export interface LegislationResult {
   legislation_id: string;
   chapter_number: string;
   title_en: string | null;
+  title_zh: string | null;
+  type: string;
+  status: string;
   section_number: string;
   section_title: string | null;
   content_snippet: string | null;
