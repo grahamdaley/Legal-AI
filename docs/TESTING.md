@@ -4,11 +4,12 @@ This document describes the testing strategy and how to run tests across all lay
 
 ## Overview
 
-The application has three test layers:
+The application has four test layers:
 
 | Layer | Framework | Location | Description |
 |-------|-----------|----------|-------------|
-| UI | Vitest + React Testing Library | `www/src/__tests__/` | React component and API client tests |
+| UI Unit | Vitest + React Testing Library | `www/src/__tests__/` | React component and API client tests |
+| UI E2E | Playwright | `www/e2e/` | End-to-end browser tests against live services |
 | Edge Functions | Deno Test | `supabase/functions/tests/` | Supabase Edge Function tests |
 | Batch Processing | pytest | `batch/tests/` | Python pipeline and job tests |
 
@@ -71,7 +72,83 @@ www/src/__tests__/
   - Authentication headers
   - Error handling
 
-## 2. Supabase Edge Function Tests (Deno)
+## 2. E2E Tests (Playwright)
+
+End-to-end tests run against the live UI, Supabase edge functions, and database without mocking.
+
+### Setup
+
+```bash
+cd www
+npm install
+npx playwright install chromium
+```
+
+### Running Tests
+
+```bash
+# Run all E2E tests (starts dev server automatically)
+npm run test:e2e
+
+# Run with headed browser (visible)
+npm run test:e2e:headed
+
+# Run with Playwright UI
+npm run test:e2e:ui
+
+# Run specific test file
+npx playwright test e2e/auth.spec.ts
+```
+
+### Prerequisites
+
+- Local Supabase running (`supabase start`)
+- Next.js dev server (started automatically by Playwright)
+
+### Test Structure
+
+```text
+www/e2e/
+├── helpers/
+│   └── test-user.ts      # Test user management utilities
+├── auth.spec.ts          # Authentication flow tests
+└── search.spec.ts        # Search and case viewing tests
+```
+
+### Key Test Files
+
+- **`auth.spec.ts`** - Authentication E2E tests:
+  - Signup form validation
+  - Account creation
+  - Login with valid/invalid credentials
+  - Logout flow
+
+- **`search.spec.ts`** - Search E2E tests:
+  - Search page display
+  - Performing searches
+  - Filtering by type (cases/legislation)
+  - Viewing case details
+  - Navigation between pages
+
+### Test User Management
+
+E2E tests create unique test users for each run. If `SUPABASE_SERVICE_ROLE_KEY` is set, users are created via the admin API (auto-confirmed). Otherwise, tests use the UI signup flow.
+
+```bash
+# Optional: Set service role key for faster test user creation
+export SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+npm run test:e2e
+```
+
+### Configuration
+
+The Playwright config (`www/playwright.config.ts`) includes:
+- Single worker to avoid auth state conflicts
+- Automatic dev server startup
+- Screenshot/video capture on failure
+- Chromium browser by default
+
+## 3. Supabase Edge Function Tests (Deno)
 
 ### Setup
 
@@ -116,7 +193,7 @@ supabase/functions/tests/
   - Search modes (semantic, hybrid)
   - Filter handling
 
-## 3. Batch Processing Tests (pytest)
+## 4. Batch Processing Tests (pytest)
 
 ### Setup
 
