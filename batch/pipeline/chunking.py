@@ -11,7 +11,7 @@ from typing import Iterable, List, Optional
 import re
 
 
-PARA_MARKER_RE = re.compile(r"^\s*(\[\d+\]|(\d+)|\\d+\.)\s+")
+PARA_MARKER_RE = re.compile(r"^\s*(\[\d+\]|\(\d+\)|\d+\.)\s+")
 
 
 @dataclass
