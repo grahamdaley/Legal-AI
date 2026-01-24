@@ -120,7 +120,7 @@ async def run(limit: Optional[int] = None) -> None:
         for row in rows:
             legislation_id = row["id"]
             sections_json = row["sections"] or []
-            sections: List[dict] = sections_json
+            sections: List[dict] = json.loads(sections_json) if isinstance(sections_json, str) else sections_json
 
             if not sections:
                 continue
