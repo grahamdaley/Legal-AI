@@ -55,6 +55,68 @@ class TestScraperState:
         assert data["stats"]["successful"] == 1
 
 
+class TestJudiciaryCoramParsing:
+    """Tests for extracting judge names from coram text."""
+
+    def test_extract_judges_comma_separated_with_period_titles(self):
+        """Test parsing comma-separated judges with period-containing titles like V.-P., J.A."""
+        from scrapers.judiciary.parsers import _extract_judges_from_coram
+        
+        result = _extract_judges_from_coram("Hon. Leonard, V.-P., Cons, Fuad, J. A.")
+        assert result == ["Leonard", "Cons", "Fuad"]
+
+    def test_extract_judges_with_full_titles(self):
+        """Test parsing judges with full titles like Mr Justice."""
+        from scrapers.judiciary.parsers import _extract_judges_from_coram
+        
+        result = _extract_judges_from_coram(
+            "Mr Justice Ribeiro PJ, Mr Justice Fok PJ and Mr Justice Tang PJ"
+        )
+        assert result == ["Ribeiro", "Fok", "Tang"]
+
+    def test_extract_judges_abbreviated_titles(self):
+        """Test parsing judges with abbreviated titles like CJHC, VP, JA."""
+        from scrapers.judiciary.parsers import _extract_judges_from_coram
+        
+        result = _extract_judges_from_coram("Cheung CJHC, Lam VP and Barma JA")
+        assert result == ["Cheung", "Lam", "Barma"]
+
+    def test_extract_judges_chief_justice(self):
+        """Test parsing The Honourable Chief Justice."""
+        from scrapers.judiciary.parsers import _extract_judges_from_coram
+        
+        result = _extract_judges_from_coram("The Honourable Chief Justice Ma")
+        assert result == ["Ma"]
+
+    def test_extract_judges_simple_hon(self):
+        """Test parsing simple Hon. prefix."""
+        from scrapers.judiciary.parsers import _extract_judges_from_coram
+        
+        result = _extract_judges_from_coram("Hon. LIU")
+        assert result == ["LIU"]
+
+    def test_extract_judges_with_coram_prefix(self):
+        """Test that Coram: prefix is stripped."""
+        from scrapers.judiciary.parsers import _extract_judges_from_coram
+        
+        result = _extract_judges_from_coram("Coram: Mr Justice Chan PJ")
+        assert result == ["Chan"]
+
+    def test_extract_judges_npj_title(self):
+        """Test parsing Non-Permanent Judge (NPJ) title."""
+        from scrapers.judiciary.parsers import _extract_judges_from_coram
+        
+        result = _extract_judges_from_coram("Lord Hoffmann NPJ and Sir Anthony Mason NPJ")
+        assert result == ["Lord Hoffmann", "Sir Anthony Mason"]
+
+    def test_extract_judges_empty_input(self):
+        """Test empty input returns empty list."""
+        from scrapers.judiciary.parsers import _extract_judges_from_coram
+        
+        result = _extract_judges_from_coram("")
+        assert result == []
+
+
 class TestJudiciaryParser:
     """Tests for Judiciary HTML parsing."""
 

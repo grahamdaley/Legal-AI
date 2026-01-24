@@ -304,20 +304,72 @@ def _map_case_prefix_to_court(prefix: str) -> Optional[str]:
 
 
 def _extract_judges_from_coram(coram_text: str) -> list[str]:
-    """Extract judge names from coram text."""
+    """Extract judge names from coram text.
+    
+    Hong Kong judgment coram sections use various formats:
+    - "Hon. Leonard V.-P., Cons Fuad J.A." (titles with periods)
+    - "Mr Justice Ribeiro PJ, Mr Justice Fok PJ" (full titles)
+    - "Cheung CJHC, Lam VP and Barma JA" (abbreviated titles)
+    
+    This function extracts clean judge names by:
+    1. First normalizing title patterns with periods (V.-P. -> VP, J.A. -> JA)
+    2. Splitting on commas and "and"
+    3. Removing judicial titles to get the surname/name
+    """
     judges = []
     
     # Remove common prefixes
     coram_text = re.sub(r"^(?:Appeal Committee|Coram)[:\s]*", "", coram_text, flags=re.IGNORECASE)
     
-    # Split on common delimiters
+    # Normalize title patterns with periods before splitting
+    # V.-P. or V-P. or V.P. -> VP
+    coram_text = re.sub(r"\bV\.?-?P\.?\b", "VP", coram_text, flags=re.IGNORECASE)
+    # J.A. or J. A. or JA. -> JA
+    coram_text = re.sub(r"\bJ\.?\s*A\.?\b", "JA", coram_text, flags=re.IGNORECASE)
+    # C.J. or CJ. -> CJ
+    coram_text = re.sub(r"\bC\.?\s*J\.?\b", "CJ", coram_text, flags=re.IGNORECASE)
+    # P.J. or PJ. -> PJ
+    coram_text = re.sub(r"\bP\.?\s*J\.?\b", "PJ", coram_text, flags=re.IGNORECASE)
+    # N.P.J. or NPJ. -> NPJ
+    coram_text = re.sub(r"\bN\.?\s*P\.?\s*J\.?\b", "NPJ", coram_text, flags=re.IGNORECASE)
+    # CJHC (Chief Justice High Court)
+    coram_text = re.sub(r"\bC\.?\s*J\.?\s*H\.?\s*C\.?\b", "CJHC", coram_text, flags=re.IGNORECASE)
+    
+    # Split on commas and "and" - but be careful with "and" to use word boundaries
     parts = re.split(r",\s*|\s+and\s+", coram_text)
     
+    # Judicial titles to remove (order matters - longer patterns first)
+    title_patterns = [
+        r"\bThe\s+Honourable\b",
+        r"\bChief\s+Justice\b",
+        r"\bMr\.?\s+Justice\b",
+        r"\bMrs\.?\s+Justice\b", 
+        r"\bMs\.?\s+Justice\b",
+        r"\bJustice\b",
+        r"\bHon\.?\b",
+        r"\bCJHC\b",  # Chief Justice High Court
+        r"\bNPJ\b",   # Non-Permanent Judge
+        r"\bPJ\b",    # Permanent Judge
+        r"\bJA\b",    # Justice of Appeal
+        r"\bVP\b",    # Vice-President
+        r"\bCJ\b",    # Chief Justice
+        r"\bJ\b",     # Justice (must be last of single-letter patterns)
+    ]
+    
     for part in parts:
-        # Extract judge name, removing titles
-        name = re.sub(r"(?:Chief Justice|Mr Justice|Mrs Justice|Ms Justice|Justice|PJ|NPJ|JA|J|VP|V-P)\s*", "", part, flags=re.IGNORECASE)
+        name = part
+        # Remove all title patterns
+        for pattern in title_patterns:
+            name = re.sub(pattern, "", name, flags=re.IGNORECASE)
+        
+        # Clean up whitespace and punctuation
+        name = re.sub(r"\s+", " ", name)  # Normalize whitespace
+        name = re.sub(r"^[\s,\.]+|[\s,\.]+$", "", name)  # Strip leading/trailing punctuation
         name = name.strip()
-        if name and len(name) > 2:
+        
+        # Only include if it looks like a valid name (not just punctuation)
+        # Allow 2-char names like "Ma" but require at least 2 consecutive letters
+        if name and len(name) >= 2 and re.search(r"[A-Za-z]{2,}", name):
             judges.append(name)
     
     return judges

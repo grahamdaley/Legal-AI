@@ -19,6 +19,7 @@ import structlog
 from config.settings import get_settings
 from scrapers.base import ScraperConfig
 from scrapers.elegislation import ELegislationScraper, ELegislationConfig
+from scrapers.utils.html_storage import save_html, generate_item_id_from_url
 
 # Configure structured logging
 structlog.configure(
@@ -203,6 +204,11 @@ async def run_elegislation_scraper(
 
             async for item in items:
                 if item.is_valid():
+                    # Save raw HTML to file for future re-parsing
+                    if item.raw_html:
+                        html_id = generate_item_id_from_url(item.source_url)
+                        save_html(html_id, item.raw_html, "elegislation", output_path)
+                    
                     # Serialize sections
                     sections_data = [
                         {

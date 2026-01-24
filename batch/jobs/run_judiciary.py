@@ -19,6 +19,7 @@ import structlog
 from config.settings import get_settings
 from scrapers.base import ScraperConfig
 from scrapers.judiciary import JudiciaryScraper, JudiciaryConfig, COURTS
+from scrapers.utils.html_storage import save_html, generate_item_id_from_url
 
 # Configure structured logging
 structlog.configure(
@@ -204,6 +205,12 @@ async def run_judiciary_scraper(
                 limit=limit,
             ):
                 if case.is_valid():
+                    # Save raw HTML to file for future re-parsing
+                    if case.raw_html:
+                        # Use URL-based ID since we don't have DB UUID yet
+                        html_id = generate_item_id_from_url(case.source_url)
+                        save_html(html_id, case.raw_html, "judiciary", output_path)
+                    
                     # Write to JSONL
                     case_data = {
                         "neutral_citation": case.neutral_citation,
