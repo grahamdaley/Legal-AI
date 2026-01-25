@@ -5,6 +5,7 @@ const AWS_SECRET_ACCESS_KEY = Deno.env.get("AWS_SECRET_ACCESS_KEY") || "";
 const EMBEDDING_MODEL = "amazon.titan-embed-text-v2:0";
 const MAX_TOKENS = 8192;
 const EMBEDDING_DIMENSIONS = 1024;
+const API_TIMEOUT_MS = 30000; // 30 second timeout for API calls
 
 function getSignatureKey(
   key: string,
@@ -112,21 +113,35 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
   const authorizationHeader = `${algorithm} Credential=${AWS_ACCESS_KEY_ID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
-  const response = await fetch(endpoint, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      "X-Amz-Date": amzDate,
-      Authorization: authorizationHeader,
-    },
-    body,
-  });
+  // Set up timeout with AbortController
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Bedrock API error: ${response.status} - ${errorText}`);
+  try {
+    const response = await fetch(endpoint, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        "X-Amz-Date": amzDate,
+        Authorization: authorizationHeader,
+      },
+      body,
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Bedrock API error: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    return result.embedding as number[];
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`Bedrock API timeout after ${API_TIMEOUT_MS}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const result = await response.json();
-  return result.embedding as number[];
 }

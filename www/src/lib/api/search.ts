@@ -35,8 +35,15 @@ export async function search(request: SearchRequest): Promise<SearchResponse> {
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || "Search failed");
+    try {
+      const error = await response.json();
+      throw new Error(error.error?.message || "Search failed");
+    } catch (e) {
+      if (e instanceof Error && e.message !== "Search failed") {
+        throw e;
+      }
+      throw new Error(`Search failed with status ${response.status}`);
+    }
   }
 
   return response.json();
@@ -58,8 +65,15 @@ export async function getSuggestions(
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || "Failed to get suggestions");
+    try {
+      const error = await response.json();
+      throw new Error(error.error?.message || "Failed to get suggestions");
+    } catch (e) {
+      if (e instanceof Error && e.message !== "Failed to get suggestions") {
+        throw e;
+      }
+      throw new Error(`Failed to get suggestions with status ${response.status}`);
+    }
   }
 
   return response.json();
@@ -73,8 +87,15 @@ export async function getCaseDetail(id: string): Promise<CaseDetail> {
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || "Failed to get case details");
+    try {
+      const error = await response.json();
+      throw new Error(error.error?.message || "Failed to get case details");
+    } catch (e) {
+      if (e instanceof Error && e.message !== "Failed to get case details") {
+        throw e;
+      }
+      throw new Error(`Failed to get case details with status ${response.status}`);
+    }
   }
 
   return response.json();
@@ -90,8 +111,15 @@ export async function getLegislationDetail(
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || "Failed to get legislation details");
+    try {
+      const error = await response.json();
+      throw new Error(error.error?.message || "Failed to get legislation details");
+    } catch (e) {
+      if (e instanceof Error && e.message !== "Failed to get legislation details") {
+        throw e;
+      }
+      throw new Error(`Failed to get legislation details with status ${response.status}`);
+    }
   }
 
   return response.json();
@@ -105,8 +133,15 @@ export async function getCaseCitations(id: string): Promise<CitationsResponse> {
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || "Failed to get case citations");
+    try {
+      const error = await response.json();
+      throw new Error(error.error?.message || "Failed to get case citations");
+    } catch (e) {
+      if (e instanceof Error && e.message !== "Failed to get case citations") {
+        throw e;
+      }
+      throw new Error(`Failed to get case citations with status ${response.status}`);
+    }
   }
 
   return response.json();

@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import signal
 import time
 from dataclasses import dataclass
 from datetime import datetime
@@ -44,27 +45,30 @@ import structlog
 
 from config.settings import get_settings
 from pipeline.chunking import chunk_case_text
+from utils.text import truncate_to_token_limit
 
 logger = structlog.get_logger(__name__)
 
+# Graceful shutdown flag
+_shutdown_requested = False
 
-def _truncate_to_token_limit(text: str, max_tokens: int = 4000) -> str:
-    """Truncate text to fit within token limit.
-    
-    Uses conservative 1 char = 1 token heuristic to stay well under
-    the 8192 token limit for Amazon Titan Text Embeddings V2.
-    """
-    max_chars = max_tokens
-    if len(text) <= max_chars:
-        return text
-    
-    # Truncate at character boundary, then at word boundary if possible
-    truncated = text[:max_chars]
-    last_space = truncated.rfind(" ")
-    if last_space > max_chars * 0.8:  # Only use space break if reasonably close
-        truncated = truncated[:last_space]
-    
-    return truncated.rstrip()
+
+def _handle_shutdown(signum, frame):
+    """Handle shutdown signals for graceful termination."""
+    global _shutdown_requested
+    _shutdown_requested = True
+    logger.info("Shutdown requested, finishing current operation...")
+
+
+def is_shutdown_requested() -> bool:
+    """Check if shutdown has been requested."""
+    return _shutdown_requested
+
+
+def setup_signal_handlers():
+    """Set up signal handlers for graceful shutdown."""
+    signal.signal(signal.SIGINT, _handle_shutdown)
+    signal.signal(signal.SIGTERM, _handle_shutdown)
 
 
 @dataclass
@@ -150,7 +154,7 @@ async def export_cases_to_jsonl(
         
         f = open_new_file()
         
-        for row in rows:
+        for row_idx, row in enumerate(rows):
             case_id = row["id"]
             full_text = row["full_text"]
             
@@ -162,7 +166,7 @@ async def export_cases_to_jsonl(
                     f = open_new_file()
                 
                 # Truncate chunk text to prevent token limit errors
-                truncated_text = _truncate_to_token_limit(chunk.text, max_tokens=4000)
+                truncated_text = truncate_to_token_limit(chunk.text, max_tokens=4000)
                 
                 record_id = f"case-{case_id}-chunk-{chunk.chunk_index}"
                 record = {
@@ -177,8 +181,8 @@ async def export_cases_to_jsonl(
                 record_count += 1
                 current_file_records += 1
             
-            if (rows.index(row) + 1) % 100 == 0:
-                log.info("Progress", processed_cases=rows.index(row) + 1, total_records=record_count)
+            if (row_idx + 1) % 100 == 0:
+                log.info("Progress", processed_cases=row_idx + 1, total_records=record_count)
         
         if current_file:
             current_file.close()
@@ -592,6 +596,9 @@ async def run_all_steps(limit: Optional[int] = None, wait: bool = False) -> None
 
 
 def main() -> None:
+    # Set up graceful shutdown handling
+    setup_signal_handlers()
+    
     structlog.configure(
         processors=[
             structlog.processors.TimeStamper(fmt="iso"),

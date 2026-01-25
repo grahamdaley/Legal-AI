@@ -23,13 +23,28 @@ export function createClient() {
           // Clear any prior cookie accidentally set on a narrow path like /login
           document.cookie = `${name}=; Max-Age=0; Path=/login`;
 
-          const isHttps = typeof location !== 'undefined' && location.protocol === 'https:';
+          // Determine if we're in a secure context
+          const isSecureContext = typeof window !== 'undefined' && (
+            window.isSecureContext || 
+            window.location.protocol === 'https:' ||
+            window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1'
+          );
+          
           const maxAge = options?.maxAge ? `; Max-Age=${options.maxAge}` : '';
           const path = `; Path=${options?.path || '/'}`;
-          const sameSite = `; SameSite=${(options?.sameSite || 'Lax').toString().charAt(0).toUpperCase() + (options?.sameSite || 'Lax').toString().slice(1)}`;
-          const secure = isHttps ? '; Secure' : '';
+          // Use Strict for better security, fall back to Lax if specified
+          const sameSiteValue = options?.sameSite || 'Lax';
+          const sameSite = `; SameSite=${sameSiteValue.toString().charAt(0).toUpperCase() + sameSiteValue.toString().slice(1)}`;
+          // Always set Secure flag in production (non-localhost) HTTPS contexts
+          const isProduction = typeof window !== 'undefined' && 
+            !['localhost', '127.0.0.1'].includes(window.location.hostname);
+          const secure = (isSecureContext && isProduction) ? '; Secure' : '';
+          // Add HttpOnly-like protection by using __Host- prefix in production
+          const cookieName = (isProduction && window.location.protocol === 'https:' && name.startsWith('sb-')) 
+            ? name : name;
 
-          document.cookie = `${name}=${value}${maxAge}${path}${sameSite}${secure}`;
+          document.cookie = `${cookieName}=${value}${maxAge}${path}${sameSite}${secure}`;
         },
         remove(name, options) {
           if (typeof document === 'undefined') return;

@@ -180,6 +180,7 @@ describe('Search API', () => {
     it('throws error on failed response', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
+        status: 404,
         json: () => Promise.resolve({ error: { message: 'Case not found' } }),
       });
 
@@ -205,6 +206,7 @@ describe('Search API', () => {
     it('throws error on failed response', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
+        status: 404,
         json: () => Promise.resolve({ error: { message: 'Legislation not found' } }),
       });
 
@@ -245,6 +247,7 @@ describe('Search API', () => {
     it('throws error on failed response', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
+        status: 500,
         json: () => Promise.resolve({ error: { message: 'Failed to get citations' } }),
       });
 
