@@ -19,7 +19,8 @@ import structlog
 
 from ..base import BaseScraper, ScrapedItem, ScraperConfig
 from .config import COURTS, COURT_HIERARCHY, JudiciaryConfig
-from .parsers import parse_judgment_html, ParsedJudgment
+from .parsers import parse_judgment_html, ParsedJudgment, extract_pdf_text
+from ..utils.citation_parser import parse_hk_citations, extract_case_number
 
 logger = structlog.get_logger(__name__)
 
@@ -421,6 +422,10 @@ class JudiciaryScraper(BaseScraper):
             # Try to find PDF link
             case.pdf_url = self._extract_pdf_url(html, url)
 
+            # If we still don't have an identifier but there is a PDF, try to enrich from PDF text
+            if not case.case_number and not case.neutral_citation and case.pdf_url:
+                await self._enrich_from_pdf(case)
+
             # Validate we got meaningful data (case_number is most reliable)
             if not case.case_number and not case.neutral_citation:
                 self._log.warning("No case number or citation found", url=url)
@@ -452,6 +457,69 @@ class JudiciaryScraper(BaseScraper):
                 return urljoin(page_url, href)
 
         return None
+
+    async def _fetch_pdf(self, url: str) -> Optional[bytes]:
+        """Fetch a PDF using the shared browser context."""
+        async with self._semaphore:
+            await self._rate_limit()
+
+            page = await self._context.new_page()
+            try:
+                self._log.info("Fetching PDF", url=url)
+                response = await page.goto(
+                    url,
+                    wait_until="networkidle",
+                    timeout=self.config.timeout,
+                )
+
+                if not response or response.status >= 400:
+                    self._log.warning(
+                        "HTTP error when fetching PDF",
+                        url=url,
+                        status=response.status if response else None,
+                    )
+                    return None
+
+                return await response.body()
+
+            except Exception as e:
+                self._log.error("Failed to fetch PDF", url=url, error=str(e))
+                return None
+
+            finally:
+                await page.close()
+
+    async def _enrich_from_pdf(self, case: JudiciaryCase) -> None:
+        """Download the PDF and try to recover identifiers from its text."""
+        if not case.pdf_url:
+            return
+
+        try:
+            pdf_bytes = await self._fetch_pdf(case.pdf_url)
+            if not pdf_bytes:
+                return
+
+            text = extract_pdf_text(pdf_bytes)
+            if not text:
+                return
+
+            # Try to fill in missing case number
+            if not case.case_number:
+                cn = extract_case_number(text)
+                if cn:
+                    case.case_number = cn
+
+            # Try to fill in missing neutral citation
+            if not case.neutral_citation:
+                citations = parse_hk_citations(text)
+                if citations:
+                    primary = citations[0]
+                    case.neutral_citation = primary.full_citation
+                    if not case.court:
+                        case.court = primary.court
+
+        except Exception as e:
+            self._log.error("Failed to enrich from PDF", url=case.pdf_url, error=str(e))
 
     async def scrape_by_citation(self, citation: str) -> Optional[JudiciaryCase]:
         """

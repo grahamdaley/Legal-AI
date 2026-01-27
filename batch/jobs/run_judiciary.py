@@ -14,12 +14,14 @@ import sys
 from datetime import date, datetime
 from pathlib import Path
 
+import httpx
 import structlog
 
 from config.settings import get_settings
 from scrapers.base import ScraperConfig
 from scrapers.judiciary import JudiciaryScraper, JudiciaryConfig, COURTS
 from scrapers.utils.html_storage import save_html, generate_item_id_from_url
+from scrapers.utils.pdf_storage import save_pdf, pdf_file_exists
 
 # Configure structured logging
 structlog.configure(
@@ -198,54 +200,83 @@ async def run_judiciary_scraper(
             logger.info("Discovered URLs", count=scraped_count, file=str(urls_file))
             return
 
-        # Full scrape
-        with open(results_file, "a") as f:
-            async for case in scraper.run(
-                resume_from_date=resume_from_date,
-                limit=limit,
-            ):
-                if case.is_valid():
-                    # Save raw HTML to file for future re-parsing
-                    if case.raw_html:
-                        # Use URL-based ID since we don't have DB UUID yet
-                        html_id = generate_item_id_from_url(case.source_url)
-                        save_html(html_id, case.raw_html, "judiciary", output_path)
-                    
-                    # Write to JSONL
-                    case_data = {
-                        "neutral_citation": case.neutral_citation,
-                        "case_number": case.case_number,
-                        "case_name": case.case_name,
-                        "court": case.court,
-                        "decision_date": str(case.decision_date) if case.decision_date else None,
-                        "judges": case.judges,
-                        "parties": case.parties,
-                        "headnote": case.headnote,
-                        "catchwords": case.catchwords,
-                        "full_text": case.full_text,
-                        "word_count": case.word_count,
-                        "language": case.language,
-                        "cited_cases": case.cited_cases,
-                        "source_url": case.source_url,
-                        "pdf_url": case.pdf_url,
-                        "scraped_at": case.scraped_at.isoformat(),
-                    }
-                    f.write(json.dumps(case_data, ensure_ascii=False) + "\n")
-                    scraped_count += 1
+        # HTTP client for downloading PDFs
+        pdf_headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+            "Accept": "application/pdf,application/octet-stream;q=0.9,*/*;q=0.8",
+        }
 
-                    logger.info(
-                        "Scraped case",
-                        citation=case.neutral_citation,
-                        name=case.case_name[:50] if case.case_name else None,
-                        count=scraped_count,
-                    )
-                else:
-                    failed_count += 1
-                    logger.warning(
-                        "Failed to scrape case",
-                        url=case.source_url,
-                        error=case.error,
-                    )
+        async with httpx.AsyncClient(headers=pdf_headers, follow_redirects=True, timeout=60.0) as pdf_client:
+            # Full scrape
+            with open(results_file, "a") as f:
+                async for case in scraper.run(
+                    resume_from_date=resume_from_date,
+                    limit=limit,
+                ):
+                    if case.is_valid():
+                        # Use URL-based ID since we don't have DB UUID yet
+                        item_id = generate_item_id_from_url(case.source_url)
+
+                        # Save raw HTML to file for future re-parsing
+                        if case.raw_html:
+                            save_html(item_id, case.raw_html, "judiciary", output_path)
+
+                        # Download and store PDF if available
+                        if case.pdf_url and not pdf_file_exists(item_id, "judiciary", output_path):
+                            try:
+                                response = await pdf_client.get(case.pdf_url)
+                                if response.status_code < 400 and response.content:
+                                    save_pdf(item_id, response.content, "judiciary", output_path)
+                                else:
+                                    logger.warning(
+                                        "Failed to download PDF",
+                                        url=case.pdf_url,
+                                        status=response.status_code,
+                                    )
+                                # Respect rate limiting between PDF requests
+                                await asyncio.sleep(delay)
+                            except Exception as e:
+                                logger.warning(
+                                    "Error downloading PDF",
+                                    url=case.pdf_url,
+                                    error=str(e),
+                                )
+
+                        # Write to JSONL
+                        case_data = {
+                            "neutral_citation": case.neutral_citation,
+                            "case_number": case.case_number,
+                            "case_name": case.case_name,
+                            "court": case.court,
+                            "decision_date": str(case.decision_date) if case.decision_date else None,
+                            "judges": case.judges,
+                            "parties": case.parties,
+                            "headnote": case.headnote,
+                            "catchwords": case.catchwords,
+                            "full_text": case.full_text,
+                            "word_count": case.word_count,
+                            "language": case.language,
+                            "cited_cases": case.cited_cases,
+                            "source_url": case.source_url,
+                            "pdf_url": case.pdf_url,
+                            "scraped_at": case.scraped_at.isoformat(),
+                        }
+                        f.write(json.dumps(case_data, ensure_ascii=False) + "\n")
+                        scraped_count += 1
+
+                        logger.info(
+                            "Scraped case",
+                            citation=case.neutral_citation,
+                            name=case.case_name[:50] if case.case_name else None,
+                            count=scraped_count,
+                        )
+                    else:
+                        failed_count += 1
+                        logger.warning(
+                            "Failed to scrape case",
+                            url=case.source_url,
+                            error=case.error,
+                        )
 
     logger.info(
         "Scraping complete",

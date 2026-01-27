@@ -74,12 +74,18 @@ def parse_judgment_html(html: str, source_url: str) -> ParsedJudgment:
         if case_match:
             result.case_number = f"{case_match.group(1)}{case_match.group(2)}/{case_match.group(3)}"
 
-    # Extract neutral citation from content
-    citation_pattern = r"\[(\d{4})\]\s*(HK(?:CFA|CA|CFI|DC|FC|LT|LAB|SCT))\s*(\d+)"
-    citation_match = re.search(citation_pattern, html)
-    if citation_match:
-        result.neutral_citation = citation_match.group(0)
-        result.court = citation_match.group(2)
+    # Fallback: use generic HK case-number extractor (handles many more formats)
+    if not result.case_number:
+        extracted_case_no = extract_case_number(html)
+        if extracted_case_no:
+            result.case_number = extracted_case_no
+
+    # Extract neutral citation from content using citation parser
+    citations = parse_hk_citations(html)
+    if citations:
+        primary = citations[0]
+        result.neutral_citation = primary.full_citation
+        result.court = primary.court
     
     # Infer court from case number if not found
     if not result.court and result.case_number:
