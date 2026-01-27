@@ -219,14 +219,16 @@ async def run_judiciary_scraper(
 
                         # Save raw HTML to file for future re-parsing
                         if case.raw_html:
-                            save_html(item_id, case.raw_html, "judiciary", output_path)
+                            # Store HTML under the shared storage root: output/judiciary/html
+                            save_html(item_id, case.raw_html, "judiciary", Path("output"))
 
                         # Download and store PDF if available
-                        if case.pdf_url and not pdf_file_exists(item_id, "judiciary", output_path):
+                        # Store PDFs alongside HTML under output/judiciary/pdf
+                        if case.pdf_url and not pdf_file_exists(item_id, "judiciary", Path("output")):
                             try:
                                 response = await pdf_client.get(case.pdf_url)
                                 if response.status_code < 400 and response.content:
-                                    save_pdf(item_id, response.content, "judiciary", output_path)
+                                    save_pdf(item_id, response.content, "judiciary", Path("output"))
                                 else:
                                     logger.warning(
                                         "Failed to download PDF",
