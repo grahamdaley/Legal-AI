@@ -44,31 +44,22 @@ export function getSupabaseClientWithAuth(authHeader: string): SupabaseClient {
 }
 
 // Verify user from auth header - returns user ID if valid, null otherwise
-export function verifyAuthHeader(authHeader: string): string | null {
+// Uses Supabase's built-in JWT verification for security
+export async function verifyAuthHeader(authHeader: string): Promise<string | null> {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return null;
   }
 
-  const token = authHeader.replace("Bearer ", "");
-  
-  // For local development, decode the JWT without verification
-  // In production, the Edge Runtime verifies JWTs automatically
   try {
-    // Decode JWT payload (base64url)
-    const parts = token.split(".");
-    if (parts.length !== 3) {
+    // Use Supabase client to properly verify the JWT token
+    const supabase = getSupabaseClientWithAuth(authHeader);
+    const { data: { user }, error } = await supabase.auth.getUser();
+    
+    if (error || !user) {
       return null;
     }
     
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
-    
-    // Check expiration
-    if (payload.exp && payload.exp < Date.now() / 1000) {
-      return null;
-    }
-    
-    // Return the user ID (sub claim)
-    return payload.sub || null;
+    return user.id;
   } catch {
     return null;
   }

@@ -4,11 +4,11 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from pipeline.embeddings import (
     _estimate_tokens,
-    _truncate_to_token_limit,
     EmbeddingResult,
     EmbeddingBackend,
     BedrockCohereBackend,
 )
+from utils.text import truncate_to_token_limit
 
 
 class TestEstimateTokens:
@@ -38,28 +38,28 @@ class TestTruncateToTokenLimit:
 
     def test_short_text_unchanged(self):
         text = "Short text"
-        result = _truncate_to_token_limit(text, max_tokens=1000)
+        result = truncate_to_token_limit(text, max_tokens=1000)
         assert result == text
 
     def test_long_text_truncated(self):
         text = "A" * 5000
-        result = _truncate_to_token_limit(text, max_tokens=1000)
+        result = truncate_to_token_limit(text, max_tokens=1000)
         assert len(result) <= 1000
 
     def test_truncates_at_word_boundary(self):
         text = "word " * 1000  # 5000 chars
-        result = _truncate_to_token_limit(text, max_tokens=100)
+        result = truncate_to_token_limit(text, max_tokens=100)
         
         # Should not end mid-word
         assert result.endswith("word") or result.endswith(" ")
 
     def test_empty_string(self):
-        result = _truncate_to_token_limit("", max_tokens=100)
+        result = truncate_to_token_limit("", max_tokens=100)
         assert result == ""
 
     def test_exact_limit(self):
         text = "A" * 100
-        result = _truncate_to_token_limit(text, max_tokens=100)
+        result = truncate_to_token_limit(text, max_tokens=100)
         assert result == text
 
 

@@ -4,7 +4,7 @@ Base scraper class with rate limiting, logging, and resume capability.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from pathlib import Path
 from typing import AsyncIterator, Optional, Any
 import asyncio
@@ -13,7 +13,7 @@ import json
 import aiofiles
 import structlog
 from playwright.async_api import async_playwright, Browser, BrowserContext, Page
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -50,9 +50,9 @@ class ScraperState(BaseModel):
     last_run_at: Optional[datetime] = None
     last_successful_url: Optional[str] = None
     last_successful_date: Optional[date] = None
-    processed_urls: set[str] = field(default_factory=set)
-    failed_urls: dict[str, str] = field(default_factory=dict)  # url -> error message
-    stats: dict[str, int] = field(default_factory=lambda: {
+    processed_urls: set[str] = Field(default_factory=set)
+    failed_urls: dict[str, str] = Field(default_factory=dict)  # url -> error message
+    stats: dict[str, int] = Field(default_factory=lambda: {
         "total_processed": 0,
         "successful": 0,
         "failed": 0,
@@ -78,7 +78,7 @@ class ScrapedItem:
     """Base class for scraped items."""
 
     source_url: str
-    scraped_at: datetime = field(default_factory=datetime.utcnow)
+    scraped_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     raw_html: Optional[str] = None
     error: Optional[str] = None
 
@@ -160,9 +160,34 @@ class BaseScraper(ABC):
                         last_run=self._state.last_run_at,
                         processed_count=len(self._state.processed_urls),
                     )
-            except Exception as e:
-                self._log.warning("Failed to load state, starting fresh", error=str(e))
+            except json.JSONDecodeError as e:
+                # State file is corrupted - back it up and start fresh
+                backup_path = state_path.with_suffix(".json.bak")
+                self._log.error(
+                    "Corrupted state file, backing up and starting fresh",
+                    error=str(e),
+                    backup_path=str(backup_path),
+                )
+                state_path.rename(backup_path)
                 self._state = ScraperState(scraper_name=self.name)
+            except (KeyError, TypeError, ValueError) as e:
+                # State file has invalid schema - back it up and start fresh
+                backup_path = state_path.with_suffix(".json.bak")
+                self._log.error(
+                    "Invalid state file schema, backing up and starting fresh",
+                    error=str(e),
+                    backup_path=str(backup_path),
+                )
+                state_path.rename(backup_path)
+                self._state = ScraperState(scraper_name=self.name)
+            except Exception as e:
+                # Unexpected error - log with full traceback and re-raise
+                self._log.error(
+                    "Unexpected error loading state",
+                    error=str(e),
+                    exc_info=True,
+                )
+                raise
         else:
             self._state = ScraperState(scraper_name=self.name)
 
@@ -171,7 +196,7 @@ class BaseScraper(ABC):
         if not self.config.state_file or not self._state:
             return
 
-        self._state.last_run_at = datetime.utcnow()
+        self._state.last_run_at = datetime.now(timezone.utc)
         state_path = Path(self.config.state_file)
         state_path.parent.mkdir(parents=True, exist_ok=True)
 

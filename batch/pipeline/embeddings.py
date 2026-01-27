@@ -17,7 +17,19 @@ import boto3
 from pydantic import BaseModel
 
 from config.settings import get_settings
+from utils.text import truncate_to_token_limit
 from . import chunking
+
+# Allowlist of valid embedding table names to prevent SQL injection
+ALLOWED_CASE_EMBEDDING_TABLES = frozenset({
+    "case_embeddings_cohere",
+    "case_embeddings_openai",
+})
+
+ALLOWED_SECTION_EMBEDDING_TABLES = frozenset({
+    "legislation_embeddings_cohere",
+    "legislation_embeddings_openai",
+})
 
 try:  # type: ignore[import]
     import openai
@@ -33,30 +45,6 @@ def _estimate_tokens(text: str) -> int:
     This is approximate but helps us avoid hitting hard token limits.
     """
     return len(text) // 3
-
-
-def _truncate_to_token_limit(text: str, max_tokens: int = 4000) -> str:
-    """Truncate text to fit within a very conservative token limit.
-
-    We *do not* try to estimate true tokens here because the Titan tokenizer can
-    be much more token-dense than typical "~4 chars per token" heuristics for
-    legal text. Instead, we assume **1 char ≈ 1 token** and cap the number of
-    characters directly. This guarantees we stay well below the 8192-token
-    model limit even in worst-case tokenization.
-    """
-
-    # Hard cap: 1 character per "token" for safety.
-    max_chars = max_tokens
-    if len(text) <= max_chars:
-        return text
-
-    # Truncate at character boundary, then at word boundary if possible
-    truncated = text[:max_chars]
-    last_space = truncated.rfind(" ")
-    if last_space > max_chars * 0.8:  # Only use space break if reasonably close
-        truncated = truncated[:last_space]
-
-    return truncated.rstrip()
 
 
 @dataclass
@@ -110,7 +98,7 @@ class BedrockCohereBackend(EmbeddingBackend):
             # Truncate text aggressively before sending to Titan.
             # Titan has an 8192 token limit; we cap at ~4000 "tokens" using a
             # 1 char ≈ 1 token heuristic to stay well under the hard limit.
-            safe_text = _truncate_to_token_limit(text, max_tokens=4000)
+            safe_text = truncate_to_token_limit(text, max_tokens=4000)
             body = json.dumps(
                 {
                     "inputText": safe_text,
@@ -165,7 +153,7 @@ class AzureOpenAIEmbeddingBackend(EmbeddingBackend):
         async def _one(text: str) -> List[float]:
             # Truncate text for Azure as well (assume similar limits ~8k tokens).
             # Use the same conservative 1 char ≈ 1 token heuristic.
-            safe_text = _truncate_to_token_limit(text, max_tokens=4000)
+            safe_text = truncate_to_token_limit(text, max_tokens=4000)
             # openai-python 1.x async client
             resp = await openai.embeddings.create(
                 input=safe_text,
@@ -335,6 +323,10 @@ async def _insert_case_embeddings(
     if not embeddings:
         return
 
+    # Validate table name against allowlist to prevent SQL injection
+    if table not in ALLOWED_CASE_EMBEDDING_TABLES:
+        raise ValueError(f"Invalid table name: {table}. Must be one of {ALLOWED_CASE_EMBEDDING_TABLES}")
+
     rows = [
         (
             e.doc_id,
@@ -359,9 +351,9 @@ async def _insert_case_embeddings(
         created_at = NOW();
     """
 
+    # Use executemany for better performance with batch inserts
     async with conn.transaction():
-        for row in rows:
-            await conn.execute(sql, *row)
+        await conn.executemany(sql, rows)
 
 
 async def _insert_section_embeddings(
@@ -377,6 +369,10 @@ async def _insert_section_embeddings(
 
     if not embeddings:
         return
+
+    # Validate table name against allowlist to prevent SQL injection
+    if table not in ALLOWED_SECTION_EMBEDDING_TABLES:
+        raise ValueError(f"Invalid table name: {table}. Must be one of {ALLOWED_SECTION_EMBEDDING_TABLES}")
 
     rows = [
         (
@@ -400,9 +396,9 @@ async def _insert_section_embeddings(
         created_at = NOW();
     """
 
+    # Use executemany for better performance with batch inserts
     async with conn.transaction():
-        for row in rows:
-            await conn.execute(sql, *row)
+        await conn.executemany(sql, rows)
 
 
 __all__ = [

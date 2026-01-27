@@ -3,6 +3,7 @@ import { corsHeaders, handleCors } from "../_shared/cors.ts";
 import { badRequest, serverError, unauthorized } from "../_shared/errors.ts";
 import { getSupabaseClient, verifyAuthHeader } from "../_shared/db.ts";
 import { generateEmbedding } from "../_shared/bedrock.ts";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rate_limit.ts";
 import type { SearchRequest, SearchResponse, CaseResult, LegislationResult, SearchResult } from "./types.ts";
 
 const DEFAULT_LIMIT = 20;
@@ -24,9 +25,15 @@ serve(async (req: Request) => {
   }
 
   // Verify the user is authenticated
-  const userId = verifyAuthHeader(authHeader);
+  const userId = await verifyAuthHeader(authHeader);
   if (!userId) {
     return unauthorized("Invalid or expired token");
+  }
+
+  // Check rate limit (100 requests per minute per user)
+  const rateLimit = checkRateLimit(userId, 100, 60000);
+  if (!rateLimit.allowed) {
+    return rateLimitResponse(rateLimit.resetIn);
   }
 
   const startTime = performance.now();

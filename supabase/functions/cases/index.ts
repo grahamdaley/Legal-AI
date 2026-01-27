@@ -63,7 +63,7 @@ serve(async (req: Request) => {
   }
 
   // Verify the user is authenticated
-  const userId = verifyAuthHeader(authHeader);
+  const userId = await verifyAuthHeader(authHeader);
   if (!userId) {
     return unauthorized("Invalid or expired token");
   }
