@@ -324,8 +324,10 @@ def _extract_judges_from_coram(coram_text: str) -> list[str]:
     """
     judges = []
     
-    # Remove common prefixes
-    coram_text = re.sub(r"^(?:Appeal Committee|Coram)[:\s]*", "", coram_text, flags=re.IGNORECASE)
+    # Remove common prefixes and suffixes
+    coram_text = re.sub(r"^(?:Appeal Committee|Coram|Before|Order by)[:\s]*", "", coram_text, flags=re.IGNORECASE)
+    # Remove common suffixes like "in Chambers", "in Court", "(Open to public)"
+    coram_text = re.sub(r"\s+(?:in Chambers?|in Court|\(Open to public\)).*$", "", coram_text, flags=re.IGNORECASE)
     
     # Normalize title patterns with periods before splitting
     # V.-P. or V-P. or V.P. -> VP
@@ -344,18 +346,26 @@ def _extract_judges_from_coram(coram_text: str) -> list[str]:
     # Split on commas and "and" - but be careful with "and" to use word boundaries
     parts = re.split(r",\s*|\s+and\s+", coram_text)
     
-    # Judicial titles to remove (order matters - longer patterns first)
+    # Judicial titles and descriptors to remove (order matters - longer patterns first)
     title_patterns = [
         r"\bThe\s+Honourable\b",
         r"\bChief\s+Justice\b",
+        r"\bDeputy\s+High\s+Court\s+Judge\b",
+        r"\bHigh\s+Court\s+Judge\b",
         r"\bMr\.?\s+Justice\b",
         r"\bMrs\.?\s+Justice\b", 
         r"\bMs\.?\s+Justice\b",
+        r"\bHis\s+Honour\s+Judge\b",
+        r"\bHer\s+Honour\s+Judge\b",
+        r"\bHis\s+Honour\b",
+        r"\bHer\s+Honour\b",
         r"\bJustice\b",
+        r"\bJudge\b",
         r"\bHon\.?\b",
         r"\bCJHC\b",  # Chief Justice High Court
         r"\bNPJ\b",   # Non-Permanent Judge
         r"\bPJ\b",    # Permanent Judge
+        r"\bJJA\b",   # Justices of Appeal (plural)
         r"\bJA\b",    # Justice of Appeal
         r"\bVP\b",    # Vice-President
         r"\bCJ\b",    # Chief Justice
@@ -370,7 +380,7 @@ def _extract_judges_from_coram(coram_text: str) -> list[str]:
         
         # Clean up whitespace and punctuation
         name = re.sub(r"\s+", " ", name)  # Normalize whitespace
-        name = re.sub(r"^[\s,\.]+|[\s,\.]+$", "", name)  # Strip leading/trailing punctuation
+        name = re.sub(r"^[\s,\.:\)\(]+|[\s,\.:\)\(]+$", "", name)  # Strip leading/trailing punctuation
         name = name.strip()
         
         # Only include if it looks like a valid name (not just punctuation)
